@@ -9,10 +9,10 @@ namespace MCP;
 public class MainProg : Renderer
 {
     Vector2 resolution = new Vector2(1640, 860);
-    float fov = 130;
+    float fov = 90;
     Vector2 z = new Vector2(0.1f, 1000f);
     Vector3[] cube;
-    Vector3 lightPos = new Vector3(1, -2, 4);
+    Vector3 lightPos = new Vector3(1, 2, 4);
 
     //Camera
     Vector3 cameraPos = new Vector3(0, 0, 0);
@@ -27,11 +27,12 @@ public class MainProg : Renderer
 
     protected override void Initialize()
     {
+        IsMouseVisible = false;
         base.Initialize();
         basicEffect = new BasicEffect(GraphicsDevice);
         basicEffect.VertexColorEnabled = true;
         basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 0, 0, 1);
-        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.CullClockwiseFace };
+        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
         SetProjectionParameters(resolution, fov, z);
     }
 
@@ -62,32 +63,38 @@ public class MainProg : Renderer
     {
         if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) Exit();
         //Controls
-        if(Input.Keyboard.IsKeyDown(Keys.W)) cameraPos -= lookDir * 0.05f;
-        if(Input.Keyboard.IsKeyDown(Keys.S)) cameraPos += lookDir * 0.05f;
-        if(Input.Keyboard.IsKeyDown(Keys.A)) cameraPos -= Vector3.Normalize(Vector3.Cross(lookDir, upDir)) * 0.05f;
-        if(Input.Keyboard.IsKeyDown(Keys.D)) cameraPos += Vector3.Normalize(Vector3.Cross(lookDir, upDir)) * 0.05f;
-        if(Input.Keyboard.IsKeyDown(Keys.Space)) cameraPos -= upDir * 0.05f;
-        if(Input.Keyboard.IsKeyDown(Keys.LeftShift)) cameraPos += upDir * 0.05f;
+        const float speed = 0.05f;
+        if (Input.Keyboard.IsKeyDown(Keys.W)) cameraPos += lookDir * speed;
+        if(Input.Keyboard.IsKeyDown(Keys.S)) cameraPos -= lookDir * speed;
+        if(Input.Keyboard.IsKeyDown(Keys.A)) cameraPos += Vector3.Normalize(Vector3.Cross(lookDir, upDir)) * speed;
+        if(Input.Keyboard.IsKeyDown(Keys.D)) cameraPos -= Vector3.Normalize(Vector3.Cross(lookDir, upDir)) * speed;
+        if(Input.Keyboard.IsKeyDown(Keys.Space)) cameraPos += upDir * speed;
+        if(Input.Keyboard.IsKeyDown(Keys.LeftShift)) cameraPos -= upDir * speed;
 
-        float dx = -Input.Mouse.XDelta;
-        float dy = Input.Mouse.YDelta;
+        var center = new Point(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
+        var ms = Mouse.GetState();
+        float dx = ms.X - center.X;
+        float dy = ms.Y - center.Y;
 
-        yaw -= dx * mouseSens;
-        pitch -= dy * mouseSens;
+        if (dx != 0 || dy != 0)
+        {
+            yaw += dx * mouseSens;
+            pitch += (-dy) * mouseSens;
 
-        pitch = Math.Clamp(pitch, -maxPitch, maxPitch);
+            pitch = Math.Clamp(pitch, -maxPitch, maxPitch);
+            float cosPitch = MathF.Cos(pitch);
+            lookDir = new Vector3(MathF.Sin(yaw) * cosPitch, MathF.Sin(pitch), MathF.Cos(yaw) * cosPitch);
+            lookDir = Vector3.Normalize(lookDir);
 
-        float cosPitch = MathF.Cos(pitch);
-        lookDir = new Vector3(MathF.Sin(yaw) * cosPitch, MathF.Sin(pitch), MathF.Cos(yaw) * cosPitch);
-        lookDir = Vector3.Normalize(lookDir);
+            right = Vector3.Normalize(Vector3.Cross(lookDir, Vector3.UnitY));
+            upDir = Vector3.Normalize(Vector3.Cross(right, lookDir));
 
-        right = Vector3.Normalize(Vector3.Cross(lookDir, Vector3.UnitY));
-        upDir = Vector3.Normalize(Vector3.Cross(right, lookDir));
+            Mouse.SetPosition(center.X, center.Y);
+        }
 
         Vector3 target = cameraPos + lookDir;
         viewMat = Invert(getPointAtMat(cameraPos, target, upDir));
 
-        //Input.Mouse.Position = new Point(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
         base.Update(gameTime);
     }
 

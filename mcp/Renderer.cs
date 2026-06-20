@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Matrix4x4 = System.Numerics.Matrix4x4;
 using System.Runtime.InteropServices;
 using System.Linq;
+using System.Diagnostics;
 
 namespace MCP;
 
@@ -131,7 +132,6 @@ public class Renderer : Core
     public void DrawMeshWithCpuCulling(Vector3[] mesh, Matrix4x4 rot, Color color, Vector3 cameraPos, Matrix4x4 viewMat, Vector3 lightPos)
     {
         var proj = GetProjectionMatrix();
-
         Vector3 pivot = new Vector3(0.5f, 0.5f, 0.5f);
 
         for (int i = 0; i < mesh.Length; i += 3)
@@ -143,60 +143,144 @@ public class Renderer : Core
             var normal = Vector3.Cross(bW - aW, cW - aW);
             var centroid = (aW + bW + cW) / 3f;
             var viewDir = cameraPos - centroid;
-            if (Vector3.Dot(normal, viewDir) < 0f) continue;
+            if (Vector3.Dot(normal, viewDir) < 0f) continue; // backface cull
 
-            var paCamV = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(aW.X, aW.Y, aW.Z), viewMat);
-            var pbCamV = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(bW.X, bW.Y, bW.Z), viewMat);
-            var pcCamV = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(cW.X, cW.Y, cW.Z), viewMat);
-            /*Vector3[] tri = new Vector3[] { new Vector3(paCamV.X, paCamV.Y, paCamV.Z), new Vector3(pbCamV.X, pbCamV.Y, pbCamV.Z), new Vector3(pcCamV.X, pcCamV.Y, pcCamV.Z) };
-            Vector3[] clipped = ClipTriangle(tri, new Vector3(0, 0, 0.2f), new Vector3(0, 0, 1));
+            // world -> camera (you already have viewMat)
+            var paCam = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(aW.X, aW.Y, aW.Z), viewMat);
+            var pbCam = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(bW.X, bW.Y, bW.Z), viewMat);
+            var pcCam = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(cW.X, cW.Y, cW.Z), viewMat);
 
-            for(int n = 0; n < clipped.Length; n += 3)
+            // camera-space -> clip-space (Vector4)
+            var clipA = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(paCam.X, paCam.Y, paCam.Z, 1f), proj);
+            var clipB = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(pbCam.X, pbCam.Y, pbCam.Z, 1f), proj);
+            var clipC = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(pcCam.X, pcCam.Y, pcCam.Z, 1f), proj);
+
+            // clip the triangle in clip-space (works with Vector4)
+            var clippedClipPoly = ClipPolygonInClipSpace(new System.Numerics.Vector4[] { clipA, clipB, clipC });
+            if (clippedClipPoly == null || clippedClipPoly.Count < 3) continue;
+
+            // triangulate fan, do perspective divide and draw
+            for (int t = 1; t + 1 < clippedClipPoly.Count; t++)
             {
-                for(int m = 0; m < 3; m++)
-                {
-                    clipped[n + m] = GetPoints(clipped[n + m], proj);
-                }
+                var v0 = clippedClipPoly[0];
+                var v1 = clippedClipPoly[t];
+                var v2 = clippedClipPoly[t + 1];
+
+                // perspective divide -> NDC
+                var ndc0 = new Vector3(v0.X / v0.W, v0.Y / v0.W, v0.Z / v0.W);
+                var ndc1 = new Vector3(v1.X / v1.W, v1.Y / v1.W, v1.Z / v1.W);
+                var ndc2 = new Vector3(v2.X / v2.W, v2.Y / v2.W, v2.Z / v2.W);
+
+                // to screen
+                float sxA = (ndc0.X * 0.5f + 0.5f) * Resolution.X;
+                float syA = (-ndc0.Y * 0.5f + 0.5f) * Resolution.Y;
+                float sxB = (ndc1.X * 0.5f + 0.5f) * Resolution.X;
+                float syB = (-ndc1.Y * 0.5f + 0.5f) * Resolution.Y;
+                float sxC = (ndc2.X * 0.5f + 0.5f) * Resolution.X;
+                float syC = (-ndc2.Y * 0.5f + 0.5f) * Resolution.Y;
+
+                Vector2[] p = new Vector2[] {
+                    new Vector2(sxA, syA),
+                    new Vector2(sxB, syB),
+                    new Vector2(sxC, syC)
+                };
+
+                DrawTriangle(p, color * MathF.Max(0.5f, Vector3.Dot(normal, lightPos - centroid)));
             }
-
-            List<Vector3> Q = clipped.ToList();
-            for(int x = 0; x < 4; x++)
-            {
-                List<Vector3> temp = new List<Vector3>();
-                for(int y = 0; y < Q.Count; y++)
-                {
-                    Vector3[] newT = new Vector3[4];
-                    switch (x)
-                    {
-                        case 0: newT = ClipTriangle(Q.ToArray(), new Vector3(1, 0, 0), new Vector3(-1, 0, 0)); break;
-                        case 1: newT = ClipTriangle(Q.ToArray(), new Vector3(-1, 0, 0), new Vector3(1, 0, 0)); break;
-                        case 2: newT = ClipTriangle(Q.ToArray(), new Vector3(0, 1, 0), new Vector3(0, -1, 0)); break;
-                        case 3: newT = ClipTriangle(Q.ToArray(), new Vector3(0, -1, 0), new Vector3(0, 1, 0)); break;
-                    }
-
-                    for(int z = 0; z < newT.Length; z++)
-                    {
-                        temp.Add(newT[z]);
-                    }
-                }
-                Q = temp;
-            }*/
-
-            var pa = GetPoints(new Vector3(paCamV.X, paCamV.Y, paCamV.Z), proj);
-            var pb = GetPoints(new Vector3(pbCamV.X, pbCamV.Y, pbCamV.Z), proj);
-            var pc = GetPoints(new Vector3(pcCamV.X, pcCamV.Y, pcCamV.Z), proj);
-
-            float sxA = (pa.X * 0.5f + 0.5f) * Resolution.X;
-            float syA = (-pa.Y * 0.5f + 0.5f) * Resolution.Y;
-            float sxB = (pb.X * 0.5f + 0.5f) * Resolution.X;
-            float syB = (-pb.Y * 0.5f + 0.5f) * Resolution.Y;
-            float sxC = (pc.X * 0.5f + 0.5f) * Resolution.X;
-            float syC = (-pc.Y * 0.5f + 0.5f) * Resolution.Y;
-
-            Vector2[] p = new Vector2[] { new Vector2(sxA, syA), new Vector2(sxB, syB), new Vector2(sxC, syC) };
-
-            DrawTriangle(p, color * MathF.Max(0.5f, Vector3.Dot(normal, lightPos - centroid)));
         }
+    }
+
+    // Clip polygon in clip-space (Vector4). Returns convex polygon in clip-space (still Vector4).
+    // Clip test: inside if
+    //   left  -> x >= -w  (dist = x + w >= 0)
+    //   right -> x <=  w  (dist = w - x >= 0)
+    //   bottom-> y >= -w  (dist = y + w >= 0)
+    //   top   -> y <=  w  (dist = w - y >= 0)
+    //   near  -> z >= 0   (dist = z >= 0)
+    //   far   -> z <= w   (dist = w - z >= 0)
+    private List<System.Numerics.Vector4> ClipPolygonInClipSpace(System.Numerics.Vector4[] poly)
+    {
+        if (poly == null || poly.Length == 0) return null;
+
+        var verts = new List<System.Numerics.Vector4>(poly);
+
+        // array of plane distance functions: positive = inside
+        var planes = new Func<System.Numerics.Vector4, float>[]
+        {
+            v => v.X + v.W,
+            v => v.W - v.X,
+            v => v.Y + v.W,
+            v => v.W - v.Y,
+            v => v.Z,
+            v => v.W - v.Z
+        };
+
+        foreach (var planeDist in planes)
+        {
+            verts = ClipAgainstPlane(verts, planeDist);
+            if (verts.Count < 3) return null;
+        }
+
+        return verts;
+    }
+
+    // Sutherland–Hodgman step for clip-space, using signed distance function
+    private List<System.Numerics.Vector4> ClipAgainstPlane(List<System.Numerics.Vector4> input, Func<System.Numerics.Vector4, float> distFunc)
+    {
+        var output = new List<System.Numerics.Vector4>();
+        if (input.Count == 0) return output;
+
+        for (int i = 0; i < input.Count; i++)
+        {
+            var curr = input[i];
+            var prev = input[(i + input.Count - 1) % input.Count];
+
+            float dCurr = distFunc(curr);
+            float dPrev = distFunc(prev);
+
+            bool insideCurr = dCurr >= 0f;
+            bool insidePrev = dPrev >= 0f;
+
+            if (insideCurr)
+            {
+                if (!insidePrev)
+                {
+                    // prev outside -> add intersection
+                    output.Add(IntersectClipEdge(prev, curr, dPrev, dCurr));
+                }
+                output.Add(curr);
+            }
+            else if (insidePrev)
+            {
+                // prev inside, curr outside -> add intersection
+                output.Add(IntersectClipEdge(prev, curr, dPrev, dCurr));
+            }
+        }
+
+        return output;
+    }
+
+    // Intersect two clip-space Vector4s. Uses linear interpolation on Vector4 components.
+    // d1 = dist(prev), d2 = dist(curr)
+    private System.Numerics.Vector4 IntersectClipEdge(System.Numerics.Vector4 p1, System.Numerics.Vector4 p2, float d1, float d2)
+    {
+        float denom = (d1 - d2);
+        float t;
+        if (MathF.Abs(denom) < 1e-6f)
+        {
+            t = 0f;
+        }
+        else
+        {
+            t = d1 / denom; // solve p(t) where dist(p(t)) == 0
+            t = Math.Clamp(t, 0f, 1f);
+        }
+        return new System.Numerics.Vector4(
+            p1.X + t * (p2.X - p1.X),
+            p1.Y + t * (p2.Y - p1.Y),
+            p1.Z + t * (p2.Z - p1.Z),
+            p1.W + t * (p2.W - p1.W)
+        );
     }
 
     public Matrix4x4 Invert(Matrix4x4 mat)
@@ -225,64 +309,5 @@ public class Renderer : Core
             pos.X, pos.Y, pos.Z, 1
         );
         return mat;
-    }
-
-    public Vector3 insertPlane(Vector3 planeP, Vector3 planeN, Vector3 lineStart, Vector3 lineEnd)
-    {
-        planeN = Vector3.Normalize(planeN);
-        float planeD = -Vector3.Dot(planeN, planeP);
-        float ad = Vector3.Dot(lineStart, planeN);
-        float bd = Vector3.Dot(lineEnd, planeN);
-        float t = (-planeD - ad) / (bd - ad);
-        Vector3 lineStartToEnd = lineEnd - lineStart;
-        Vector3 lineToIntersect = lineStartToEnd * t;
-        return lineStart + lineToIntersect;
-    }
-
-    public Vector3[] ClipTriangle(Vector3[] tri, Vector3 planeP, Vector3 planeN)
-    {
-        if (tri == null || tri.Length != 3) return Array.Empty<Vector3>();
-        planeN = Vector3.Normalize(planeN);
-        Func<Vector3, float> dist = p => Vector3.Dot(planeN, p) - Vector3.Dot(planeN, planeP);
-
-        var inside = new List<Vector3>(3);
-        var outside = new List<Vector3>(3);
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (dist(tri[i]) >= 0f) inside.Add(tri[i]);
-            else outside.Add(tri[i]);
-        }
-
-        if (inside.Count == 0) return Array.Empty<Vector3>();
-
-        if (inside.Count == 3) return inside.ToArray();
-
-        var result = new List<Vector3>();
-
-        // 1 inside, 2 outside -> form one triangle (inside, i->o0 intersection, i->o1 intersection)
-        if (inside.Count == 1 && outside.Count == 2)
-        {
-            result.Add(inside[0]);
-            result.Add(insertPlane(planeP, planeN, inside[0], outside[0]));
-            result.Add(insertPlane(planeP, planeN, inside[0], outside[1]));
-            return result.ToArray();
-        }
-
-        // 2 inside, 1 outside -> form two triangles (i0, i1, i0->o intersection) etc.
-        if (inside.Count == 2 && outside.Count == 1)
-        {
-            result.Add(inside[0]);
-            result.Add(inside[1]);
-            result.Add(insertPlane(planeP, planeN, inside[0], outside[0]));
-
-            result.Add(inside[1]);
-            result.Add(result[2]);
-            result.Add(insertPlane(planeP, planeN, inside[1], outside[0]));
-
-            return result.ToArray();
-        }
-
-        return Array.Empty<Vector3>();
     }
 }

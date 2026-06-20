@@ -1,14 +1,14 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\mcp\\",
+  "WorkspaceRootPath": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mcp\\renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mcp\\mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,28 +26,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Renderer.cs",
-              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\mcp\\Renderer.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
               "RelativeDocumentMoniker": "Renderer.cs",
-              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\mcp\\Renderer.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
               "RelativeToolTip": "Renderer.cs",
-              "ViewState": "AgIAAIoAAAAAAAAAAAAAAJ4AAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAMYAAAAAAAAAAAAiwMEAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-20T07:57:42.982Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-20T07:57:42.982Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "MainProg.cs",
-              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\mcp\\MainProg.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\MainProg.cs",
               "RelativeDocumentMoniker": "MainProg.cs",
-              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\mcp\\MainProg.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\MainProg.cs",
               "RelativeToolTip": "MainProg.cs",
-              "ViewState": "AgIAAFMAAAAAAAAAAAAgwGEAAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAEcAAAAAAAAAAAAgwB0AAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-18T17:34:42.466Z"
+              "WhenOpened": "2026-06-18T17:34:42.466Z",
+              "EditorCaption": ""
             }
           ]
         }
