@@ -7,8 +7,20 @@
       "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\physics\\raycast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:physics\\raycast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\input\\mousebutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:input\\mousebutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\graphics\\textureatlas.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:graphics\\textureatlas.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,16 +38,51 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MouseButton.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Input\\MouseButton.cs",
+              "RelativeDocumentMoniker": "Input\\MouseButton.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Input\\MouseButton.cs",
+              "RelativeToolTip": "Input\\MouseButton.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-21T15:51:12.237Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "TextureAtlas.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Graphics\\TextureAtlas.cs",
+              "RelativeDocumentMoniker": "Graphics\\TextureAtlas.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Graphics\\TextureAtlas.cs",
+              "RelativeToolTip": "Graphics\\TextureAtlas.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-21T13:49:12.405Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "Raycast.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Physics\\Raycast.cs",
+              "RelativeDocumentMoniker": "Physics\\Raycast.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Physics\\Raycast.cs",
+              "RelativeToolTip": "Physics\\Raycast.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAA5wB4AAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-21T13:48:36.282Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Renderer.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
               "RelativeDocumentMoniker": "Renderer.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
               "RelativeToolTip": "Renderer.cs",
-              "ViewState": "AgIAAMYAAAAAAAAAAAAiwMEAAAAbAAAAAAAAAA==",
+              "ViewState": "AgIAAP0AAAAAAAAAAAAQwA0BAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-20T07:57:42.982Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-20T07:57:42.982Z"
             },
             {
               "$type": "Document",
@@ -45,7 +92,7 @@
               "RelativeDocumentMoniker": "MainProg.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\MainProg.cs",
               "RelativeToolTip": "MainProg.cs",
-              "ViewState": "AgIAAEcAAAAAAAAAAAAgwB0AAAAeAAAAAAAAAA==",
+              "ViewState": "AgIAABEAAAAAAAAAAAAAwCUAAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-18T17:34:42.466Z",
               "EditorCaption": ""

@@ -3,9 +3,6 @@ using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Matrix4x4 = System.Numerics.Matrix4x4;
-using System.Runtime.InteropServices;
-using System.Linq;
-using System.Diagnostics;
 
 namespace MCP;
 
@@ -143,35 +140,29 @@ public class Renderer : Core
             var normal = Vector3.Cross(bW - aW, cW - aW);
             var centroid = (aW + bW + cW) / 3f;
             var viewDir = cameraPos - centroid;
-            if (Vector3.Dot(normal, viewDir) < 0f) continue; // backface cull
+            if (Vector3.Dot(normal, viewDir) < 0f) continue;
 
-            // world -> camera (you already have viewMat)
             var paCam = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(aW.X, aW.Y, aW.Z), viewMat);
             var pbCam = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(bW.X, bW.Y, bW.Z), viewMat);
             var pcCam = System.Numerics.Vector3.Transform(new System.Numerics.Vector3(cW.X, cW.Y, cW.Z), viewMat);
 
-            // camera-space -> clip-space (Vector4)
             var clipA = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(paCam.X, paCam.Y, paCam.Z, 1f), proj);
             var clipB = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(pbCam.X, pbCam.Y, pbCam.Z, 1f), proj);
             var clipC = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(pcCam.X, pcCam.Y, pcCam.Z, 1f), proj);
 
-            // clip the triangle in clip-space (works with Vector4)
             var clippedClipPoly = ClipPolygonInClipSpace(new System.Numerics.Vector4[] { clipA, clipB, clipC });
             if (clippedClipPoly == null || clippedClipPoly.Count < 3) continue;
 
-            // triangulate fan, do perspective divide and draw
             for (int t = 1; t + 1 < clippedClipPoly.Count; t++)
             {
                 var v0 = clippedClipPoly[0];
                 var v1 = clippedClipPoly[t];
                 var v2 = clippedClipPoly[t + 1];
 
-                // perspective divide -> NDC
                 var ndc0 = new Vector3(v0.X / v0.W, v0.Y / v0.W, v0.Z / v0.W);
                 var ndc1 = new Vector3(v1.X / v1.W, v1.Y / v1.W, v1.Z / v1.W);
                 var ndc2 = new Vector3(v2.X / v2.W, v2.Y / v2.W, v2.Z / v2.W);
 
-                // to screen
                 float sxA = (ndc0.X * 0.5f + 0.5f) * Resolution.X;
                 float syA = (-ndc0.Y * 0.5f + 0.5f) * Resolution.Y;
                 float sxB = (ndc1.X * 0.5f + 0.5f) * Resolution.X;
@@ -190,21 +181,10 @@ public class Renderer : Core
         }
     }
 
-    // Clip polygon in clip-space (Vector4). Returns convex polygon in clip-space (still Vector4).
-    // Clip test: inside if
-    //   left  -> x >= -w  (dist = x + w >= 0)
-    //   right -> x <=  w  (dist = w - x >= 0)
-    //   bottom-> y >= -w  (dist = y + w >= 0)
-    //   top   -> y <=  w  (dist = w - y >= 0)
-    //   near  -> z >= 0   (dist = z >= 0)
-    //   far   -> z <= w   (dist = w - z >= 0)
     private List<System.Numerics.Vector4> ClipPolygonInClipSpace(System.Numerics.Vector4[] poly)
     {
         if (poly == null || poly.Length == 0) return null;
-
         var verts = new List<System.Numerics.Vector4>(poly);
-
-        // array of plane distance functions: positive = inside
         var planes = new Func<System.Numerics.Vector4, float>[]
         {
             v => v.X + v.W,
@@ -224,7 +204,6 @@ public class Renderer : Core
         return verts;
     }
 
-    // Sutherland–Hodgman step for clip-space, using signed distance function
     private List<System.Numerics.Vector4> ClipAgainstPlane(List<System.Numerics.Vector4> input, Func<System.Numerics.Vector4, float> distFunc)
     {
         var output = new List<System.Numerics.Vector4>();
@@ -243,36 +222,23 @@ public class Renderer : Core
 
             if (insideCurr)
             {
-                if (!insidePrev)
-                {
-                    // prev outside -> add intersection
-                    output.Add(IntersectClipEdge(prev, curr, dPrev, dCurr));
-                }
+                if (!insidePrev) output.Add(IntersectClipEdge(prev, curr, dPrev, dCurr));
                 output.Add(curr);
             }
-            else if (insidePrev)
-            {
-                // prev inside, curr outside -> add intersection
-                output.Add(IntersectClipEdge(prev, curr, dPrev, dCurr));
-            }
+            else if (insidePrev) output.Add(IntersectClipEdge(prev, curr, dPrev, dCurr));
         }
 
         return output;
     }
 
-    // Intersect two clip-space Vector4s. Uses linear interpolation on Vector4 components.
-    // d1 = dist(prev), d2 = dist(curr)
     private System.Numerics.Vector4 IntersectClipEdge(System.Numerics.Vector4 p1, System.Numerics.Vector4 p2, float d1, float d2)
     {
         float denom = (d1 - d2);
         float t;
-        if (MathF.Abs(denom) < 1e-6f)
-        {
-            t = 0f;
-        }
+        if (MathF.Abs(denom) < 1e-6f) t = 0f;
         else
         {
-            t = d1 / denom; // solve p(t) where dist(p(t)) == 0
+            t = d1 / denom;
             t = Math.Clamp(t, 0f, 1f);
         }
         return new System.Numerics.Vector4(
