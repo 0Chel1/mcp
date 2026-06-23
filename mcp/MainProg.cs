@@ -3,6 +3,7 @@ using MCP.Features;
 using MCP.Graphics;
 using MCP.Physics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -19,8 +20,9 @@ public class MainProg : Renderer
     Vector3 lightPos = new Vector3(1, 2, 4);
 
     // Camera
-    Vector3 cameraPos = new Vector3(0, 0, 0);
-    Vector3 lookDir = new Vector3(0, 0, 1);
+    Vector3 cameraPos = new Vector3(0, 5.5f, 0);
+    Vector3 lookDir = new Vector3(1, 0, 0);
+    Vector3 oldLookDir;
     Vector3 upDir = new Vector3(0, 1, 0);
     Vector3 right = new Vector3(1, 0, 0);
     float yaw = 0f;
@@ -29,14 +31,22 @@ public class MainProg : Renderer
     const float maxPitch = 1.47f;
 
     TextureAtlas atlas;
-    MouseState prevMouseState;
     const float HighlightDecayPerSecond = 2f;
     BlocksManagement blocks = new BlocksManagement();
+    MapGeneration mapGen = new MapGeneration();
 
+    int blockSelected = 0;
+
+    private int frameCount = 0;
+    private float elapsedTime = 0f;
+    private float fps = 0f;
+    private SpriteFont spriteFont;
+
+    private bool showChunkBorders = false;
+    private bool meshesInitialized = false;
     protected override void Initialize()
     {
         base.Initialize();
-
         GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.CullClockwiseFace };
         IsMouseVisible = false;
 
@@ -48,29 +58,46 @@ public class MainProg : Renderer
     protected override void LoadContent()
     {
         base.LoadContent();
-
+        spriteFont = Content.Load<SpriteFont>("Arial");
         atlas = TextureAtlas.FromFile(Content, "atlas-definition.xml");
-        var region = atlas.GetRegion("cobblestone");
+        List<TextureRegion> region = new List<TextureRegion>() { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass") };
 
-        float u0 = region.SourceRectangle.X / (float)atlas.Texture.Width;
-        float v0 = region.SourceRectangle.Y / (float)atlas.Texture.Height;
-        float u1 = (region.SourceRectangle.X + region.SourceRectangle.Width) / (float)atlas.Texture.Width;
-        float v1 = (region.SourceRectangle.Y + region.SourceRectangle.Height) / (float)atlas.Texture.Height;
-        blocks.faceVerts = blocks.BuildCubeFaceVertexArrays(u0, v0, u1, v1);
+        for(int i = 0; i < region.Count; i++)
+        {
+            float u0 = region[i].SourceRectangle.X / (float)atlas.Texture.Width;
+            float v0 = region[i].SourceRectangle.Y / (float)atlas.Texture.Height;
+            float u1 = (region[i].SourceRectangle.X + region[i].SourceRectangle.Width) / (float)atlas.Texture.Width;
+            float v1 = (region[i].SourceRectangle.Y + region[i].SourceRectangle.Height) / (float)atlas.Texture.Height;
+            blocks.faceVerts.Add(blocks.BuildCubeFaceVertexArrays(u0, v0, u1, v1));
+        }
 
         blocks.cubes.Clear();
-        blocks.cubes.Add(Matrix.Identity);
+        blocks.AddCube(Vector3.Zero, 0);
+        mapGen.size = new Vector3(16, 2, 16);
+        mapGen.GenMap(blocks);
 
-        blocks.faceEmission = new List<float[]>();
-        foreach (var _ in blocks.cubes) blocks.faceEmission.Add(new float[6]);
-
-        blocks.faceVisible = new List<bool[]>();
-        for (int i = 0; i < blocks.cubes.Count; i++) blocks.faceVisible.Add(new bool[6] { true, true, true, true, true, true });
-        blocks.UpdateVisibilityForAll();
+        //blocks.RebuildMesh(GraphicsDevice);
     }
 
     protected override void Update(GameTime gameTime)
     {
+        if (!meshesInitialized)
+        {
+            meshesInitialized = true;
+            blocks.RebuildMesh(GraphicsDevice);
+        }
+        /*float dtt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        // FPS Counter
+        elapsedTime += dtt;
+        frameCount++;
+        if (elapsedTime >= 1.0f)
+        {
+            fps = frameCount;
+            frameCount = 0;
+            elapsedTime = 0f;
+        }*/
+
         if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) Exit();
         // Controls
         const float speed = 0.05f;
@@ -86,39 +113,66 @@ public class MainProg : Renderer
         var ms = Mouse.GetState();
         int dx = ms.X - center.X;
         int dy = ms.Y - center.Y;
-        if (dx != 0 || dy != 0)
-        {
-            yaw -= dx * mouseSens;
-            pitch -= dy * mouseSens;
-            pitch = Math.Clamp(pitch, -maxPitch, maxPitch);
 
-            float cosPitch = MathF.Cos(pitch);
-            lookDir = new Vector3(MathF.Sin(yaw) * cosPitch, MathF.Sin(pitch), MathF.Cos(yaw) * cosPitch);
-            lookDir = Vector3.Normalize(lookDir);
-
-            right = Vector3.Normalize(Vector3.Cross(lookDir, Vector3.UnitY));
-            upDir = Vector3.Normalize(Vector3.Cross(right, lookDir));
-
-            Mouse.SetPosition(center.X, center.Y);
-        }
-
-        Vector3 origin = cameraPos;
+        float bestDistance = 8f;
+        blocks.currentCubeIndex = -1;
+        blocks.currentFace = -1;
         Vector3 dir = Vector3.Normalize(lookDir);
-
-        for (int i = 0; i < blocks.cubes.Count; i++)
+        if (!IsMouseVisible)
         {
-            blocks.HighlightFaceByRay(origin, dir, blocks.cubes[i], i);
+            if (dx != 0 || dy != 0)
+            {
+                yaw -= dx * mouseSens;
+                pitch -= dy * mouseSens;
+                pitch = Math.Clamp(pitch, -maxPitch, maxPitch);
+
+                float cosPitch = MathF.Cos(pitch);
+                lookDir = new Vector3(MathF.Sin(yaw) * cosPitch, MathF.Sin(pitch), MathF.Cos(yaw) * cosPitch);
+                lookDir = Vector3.Normalize(lookDir);
+
+                right = Vector3.Normalize(Vector3.Cross(lookDir, Vector3.UnitY));
+                upDir = Vector3.Normalize(Vector3.Cross(right, lookDir));
+
+                Mouse.SetPosition(center.X, center.Y);
+            }
+
+            if (Input.Mouse.WasButtonJustPressed(MouseButton.Right) && blocks.currentFace >= 0)
+            {
+                Vector3 normal = BlocksManagement.FaceOffsets[blocks.currentFace];
+                Vector3 placePos = cameraPos + dir * bestDistance + normal * 0.5f; // грубое приближение
+                blocks.AddCube(placePos, blockSelected);
+            }
+            else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.currentFace >= 0)
+            {
+                Vector3 removePos = cameraPos + dir * bestDistance;
+                blocks.RemoveCube(removePos);
+            }
         }
 
-        if (Input.Mouse.WasButtonJustPressed(MouseButton.Right))
+        blocks.HighlightFaceByRay(cameraPos, dir, ref bestDistance);
+
+
+
+        for (int i = 1; i <= 9; i++)
         {
-            var n = blocks.currentFace switch { 0 => new Vector3(0, 0, -1), 1 => new Vector3(1, 0, 0), 2 => new Vector3(0, 0, 1), 3 => new Vector3(-1, 0, 0), 4 => new Vector3(0, 1, 0), 5 => new Vector3(0, -1, 0), _ => Vector3.Zero };
-            var faceWorldNormal = Vector3.Normalize(Vector3.TransformNormal(n, blocks.cubes[blocks.currentCubeIndex]));
-            blocks.AddCube(blocks.cubes[blocks.currentCubeIndex].Translation + faceWorldNormal);
+            if (Input.Keyboard.WasKeyJustPressed((Keys)((int)Keys.D0 + i)))
+            {
+                switch (i)
+                {
+                    case 1: blockSelected = 0; break;
+                    case 2: blockSelected = 1; break;
+                }
+                    
+            }
         }
-        else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left))
+
+
+
+        if (Input.Keyboard.WasKeyJustPressed(Keys.Tab)) 
         {
-            blocks.RemoveCubeAt(blocks.currentCubeIndex);
+            IsMouseVisible = !IsMouseVisible;
+            if(IsMouseVisible) oldLookDir = lookDir;
+            if (!IsMouseVisible) lookDir = oldLookDir;
         }
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -137,36 +191,34 @@ public class MainProg : Renderer
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        basicEffect = new BasicEffect(GraphicsDevice)
-        {
-            VertexColorEnabled = false,
-            TextureEnabled = true
-        };
+        if (blocks.meshNeedsRebuild) blocks.RebuildMesh(GraphicsDevice);
 
-        basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, z.X, z.Y);
-        basicEffect.View = Matrix.CreateLookAt(cameraPos, cameraPos + lookDir, upDir);
-        basicEffect.Texture = atlas.Texture;
+        if (basicEffect == null) basicEffect = new BasicEffect(GraphicsDevice);
+
+        basicEffect.VertexColorEnabled = false;
         basicEffect.TextureEnabled = true;
+        basicEffect.Texture = atlas.Texture;
+        basicEffect.World = Matrix.Identity;
+        basicEffect.View = Matrix.CreateLookAt(cameraPos, cameraPos + lookDir, upDir);
+        basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, z.X, z.Y);
 
-        //draw all cubes
-        for (int cubeIndex = 0; cubeIndex < blocks.cubes.Count; cubeIndex++)
+        foreach (var chunk in blocks.chunkManager.Chunks.Values)
         {
-            var world = blocks.cubes[cubeIndex];
-            for (int face = 0; face < 6; face++)
+            if (chunk.VertexBuffer == null || chunk.VertexCount == 0) continue;
+
+            foreach (var pass in basicEffect.CurrentTechnique.Passes)
             {
-                if (blocks.faceVisible != null && cubeIndex < blocks.faceVisible.Count && !blocks.faceVisible[cubeIndex][face]) continue;
-
-                basicEffect.World = world;
-                float emiss = MathF.Min(blocks.faceEmission[cubeIndex][face], 1f);
-                basicEffect.EmissiveColor = new Vector3(emiss, emiss, emiss);
-
-                foreach (var pass in basicEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-                    GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, blocks.faceVerts[face], 0, 2);
-                }
+                pass.Apply();
+                GraphicsDevice.SetVertexBuffer(chunk.VertexBuffer);
+                GraphicsDevice.Indices = chunk.IndexBuffer;
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.VertexCount, 0, chunk.VertexCount / 3);
             }
         }
+
+        // FPS
+        /*SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullCounterClockwise);
+        SpriteBatch.DrawString(spriteFont, $"FPS: {fps:F0}", new Vector2(10, 10), Color.Yellow);
+        SpriteBatch.End();*/
 
         base.Draw(gameTime);
     }
