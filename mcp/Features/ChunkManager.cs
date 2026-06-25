@@ -94,31 +94,24 @@ public class ChunkManager
         var inds = new List<int>();
 
         for (int lx = 0; lx < Chunk.SIZE; lx++)
-        {
             for (int ly = 0; ly < Chunk.SIZE; ly++)
-            {
                 for (int lz = 0; lz < Chunk.SIZE; lz++)
                 {
-                    // world position of this block
                     Vector3 worldPos = chunk.WorldPos + new Vector3(lx, ly, lz);
 
-                    // Check existence first — HasBlock returns true even if stored type == 0
-                    if (!bm.HasBlock(worldPos))
-                        continue;
+                    if (!bm.HasBlock(worldPos)) continue;
 
                     int type = bm.GetBlockType(worldPos);
-                    // safe index into faceVerts
-                    var cubeFaces = bm.faceVerts[type % bm.faceVerts.Count];
+                    var blocksFaces = bm.faceVerts[type % bm.faceVerts.Count];
 
                     Matrix worldMat = Matrix.CreateTranslation(worldPos);
 
                     for (int f = 0; f < 6; f++)
                     {
                         Vector3 neighbor = worldPos + BlocksManagement.FaceOffsets[f];
-                        // hide face if there's any block at neighbor position
                         if (bm.HasBlock(neighbor)) continue;
 
-                        var faceVertsLocal = cubeFaces[f];
+                        var faceVertsLocal = blocksFaces[f];
                         int startIdx = verts.Count;
 
                         foreach (var v in faceVertsLocal)
@@ -128,24 +121,30 @@ public class ChunkManager
                             inds.Add(startIdx + i);
                     }
                 }
-            }
-        }
 
         chunk.VertexCount = verts.Count;
 
         if (chunk.VertexBuffer == null || chunk.VertexBuffer.VertexCount < verts.Count)
         {
             chunk.VertexBuffer?.Dispose();
-            chunk.VertexBuffer = new DynamicVertexBuffer(gd, VertexPositionTexture.VertexDeclaration, Math.Max(verts.Count, 1024), BufferUsage.WriteOnly);
+            chunk.VertexBuffer = new DynamicVertexBuffer(gd, VertexPositionTexture.VertexDeclaration,
+                Math.Max(verts.Count, 1024), BufferUsage.WriteOnly);
         }
-        if (verts.Count > 0) chunk.VertexBuffer.SetData(verts.ToArray());
+        if (verts.Count > 0)
+            chunk.VertexBuffer.SetData(verts.ToArray());
+        else
+            chunk.VertexBuffer.SetData(new VertexPositionTexture[0]);
 
         if (chunk.IndexBuffer == null || chunk.IndexBuffer.IndexCount < inds.Count)
         {
             chunk.IndexBuffer?.Dispose();
-            chunk.IndexBuffer = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
+            chunk.IndexBuffer = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits,
+                Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
         }
-        if (inds.Count > 0) chunk.IndexBuffer.SetData(inds.ToArray());
+        if (inds.Count > 0)
+            chunk.IndexBuffer.SetData(inds.ToArray());
+        else if (chunk.IndexBuffer != null)
+            chunk.IndexBuffer.SetData(new int[0]);
 
         chunk.NeedsRebuild = false;
     }

@@ -1,15 +1,11 @@
 ﻿using IDEOS.Input;
 using MCP.Features;
 using MCP.Graphics;
-using MCP.Physics;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using Matrix4x4 = System.Numerics.Matrix4x4;
 
 namespace MCP;
 
@@ -18,7 +14,7 @@ public class MainProg : Renderer
     Vector2 resolution = new Vector2(1640, 860);
     float fov = 90;
     Vector2 z = new Vector2(0.1f, 1000f);
-    Vector3 lightPos = new Vector3(1, 2, 4);
+    //Vector3 lightPos = new Vector3(1, 2, 4);
 
     // Camera
     Vector3 cameraPos = new Vector3(40, 30.5f, 40);
@@ -60,11 +56,11 @@ public class MainProg : Renderer
             float v0 = region[i].SourceRectangle.Y / (float)atlas.Texture.Height;
             float u1 = (region[i].SourceRectangle.X + region[i].SourceRectangle.Width) / (float)atlas.Texture.Width;
             float v1 = (region[i].SourceRectangle.Y + region[i].SourceRectangle.Height) / (float)atlas.Texture.Height;
-            blocks.faceVerts.Add(blocks.BuildCubeFaceVertexArrays(u0, v0, u1, v1));
+            blocks.faceVerts.Add(blocks.BuildBlockFaceVertexArrays(u0, v0, u1, v1));
         }
 
-        blocks.cubes.Clear();
-        //blocks.AddCube(Vector3.Zero, 1); раскоментировать если нужны тесты без карты.
+        blocks.blocks.Clear();
+        //blocks.AddBlock(Vector3.Zero, 1); раскоментировать если нужны тесты без карты.
         mapGen.size = new Vector3(80, 30, 80);
         mapGen.GenMap(blocks);
         blocks.meshNeedsRebuild = true;
@@ -89,7 +85,7 @@ public class MainProg : Renderer
         int dy = ms.Y - center.Y;
 
         float bestDistance = 5f;
-        blocks.currentCubeIndex = -1;
+        blocks.currentBlockIndex = -1;
         blocks.currentFace = -1;
         Vector3 dir = Vector3.Normalize(lookDir);
         blocks.HighlightFaceByRay(cameraPos, dir, ref bestDistance);
@@ -114,23 +110,23 @@ public class MainProg : Renderer
             if (Input.Mouse.WasButtonJustPressed(MouseButton.Right) && blocks.HasHighlight)
             {
                 Vector3 normal = BlocksManagement.FaceOffsets[blocks.HighlightFace];
-                // place on neighbor cell (use integer rounding consistent with storage)
                 Vector3 placeCell = new Vector3(
                     MathF.Round(blocks.HighlightPos.X + normal.X),
                     MathF.Round(blocks.HighlightPos.Y + normal.Y),
                     MathF.Round(blocks.HighlightPos.Z + normal.Z)
                 );
-                blocks.AddCube(placeCell, blockSelected);
+                blocks.AddBlock(placeCell, blockSelected);
+                blocks.chunkManager.RebuildMeshes(GraphicsDevice);
             }
             else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.HasHighlight)
             {
-                // remove the exact block we hit
                 Vector3 removeCell = new Vector3(
                     MathF.Round(blocks.HighlightPos.X),
                     MathF.Round(blocks.HighlightPos.Y),
                     MathF.Round(blocks.HighlightPos.Z)
                 );
-                blocks.RemoveCube(removeCell);
+                blocks.RemoveBlock(removeCell);
+                blocks.chunkManager.RebuildMeshes(GraphicsDevice);
             }
         }
 
