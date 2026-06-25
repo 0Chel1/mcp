@@ -15,6 +15,17 @@ public class ChunkManager
         bm = blocksManagement;
     }
 
+    public void MarkChunkDirty(Vector3 worldPos)
+    {
+        Vector3 chunkCoord = GetChunkCoord(worldPos);
+        if (!Chunks.TryGetValue(chunkCoord, out Chunk chunk))
+        {
+            chunk = new Chunk(chunkCoord);
+            Chunks[chunkCoord] = chunk;
+        }
+        chunk.NeedsRebuild = true;
+    }
+
     public void AddBlock(Vector3 worldPos, int blockType)
     {
         Vector3 chunkCoord = GetChunkCoord(worldPos);
@@ -59,15 +70,13 @@ public class ChunkManager
     {
         centerChunk.NeedsRebuild = true;
 
-        // Перестраиваем соседние чанки (важно для границ)
         for (int dx = -1; dx <= 1; dx++)
             for (int dy = -1; dy <= 1; dy++)
                 for (int dz = -1; dz <= 1; dz++)
                 {
                     if (dx == 0 && dy == 0 && dz == 0) continue;
                     Vector3 neighborCoord = centerChunk.ChunkCoord + new Vector3(dx, dy, dz);
-                    if (Chunks.TryGetValue(neighborCoord, out Chunk neighbor))
-                        neighbor.NeedsRebuild = true;
+                    if (Chunks.TryGetValue(neighborCoord, out Chunk neighbor)) neighbor.NeedsRebuild = true;
                 }
     }
 
@@ -75,105 +84,68 @@ public class ChunkManager
     {
         foreach (var chunk in Chunks.Values)
         {
-            if (chunk.NeedsRebuild)
-                RebuildSingleChunk(chunk, gd);
+            if (chunk.NeedsRebuild) RebuildSingleChunk(chunk, gd);
         }
     }
 
     private void RebuildSingleChunk(Chunk chunk, GraphicsDevice gd)
     {
-        var verts = new List<VertexPositionTexture>(4096); // предвыделение
-        var inds = new List<int>(6144);
+        var verts = new List<VertexPositionTexture>();
+        var inds = new List<int>();
 
         for (int lx = 0; lx < Chunk.SIZE; lx++)
+        {
             for (int ly = 0; ly < Chunk.SIZE; ly++)
+            {
                 for (int lz = 0; lz < Chunk.SIZE; lz++)
                 {
-                    byte type = chunk.Blocks[lx, ly, lz];
-                    if (type == 0) continue;
+                    // world position of this block
+                    Vector3 worldPos = chunk.WorldPos + new Vector3(lx, ly, lz);
 
-                    Vector3 worldBase = chunk.WorldPos + new Vector3(lx, ly, lz);
-                    Matrix worldMat = Matrix.CreateTranslation(worldBase);
+                    // Check existence first — HasBlock returns true even if stored type == 0
+                    if (!bm.HasBlock(worldPos))
+                        continue;
 
-                    var cubeFaces = bm.faceVerts[type];
+                    int type = bm.GetBlockType(worldPos);
+                    // safe index into faceVerts
+                    var cubeFaces = bm.faceVerts[type % bm.faceVerts.Count];
+
+                    Matrix worldMat = Matrix.CreateTranslation(worldPos);
 
                     for (int f = 0; f < 6; f++)
                     {
-                        // === CULLING ГРАНЕЙ ===
-                        Vector3 neighborPos = worldBase + BlocksManagement.FaceOffsets[f];
-                        bool isFaceVisible = true;
+                        Vector3 neighbor = worldPos + BlocksManagement.FaceOffsets[f];
+                        // hide face if there's any block at neighbor position
+                        if (bm.HasBlock(neighbor)) continue;
 
-                        // Проверяем соседа внутри этого же чанка
-                        Vector3 localNeighbor = neighborPos - chunk.WorldPos;
-                        int nlx = (int)localNeighbor.X;
-                        int nly = (int)localNeighbor.Y;
-                        int nlz = (int)localNeighbor.Z;
-
-                        if (nlx >= 0 && nlx < Chunk.SIZE &&
-                            nly >= 0 && nly < Chunk.SIZE &&
-                            nlz >= 0 && nlz < Chunk.SIZE)
-                        {
-                            // Сосед внутри чанка
-                            if (chunk.Blocks[nlx, nly, nlz] != 0)
-                                isFaceVisible = false;
-                        }
-                        else
-                        {
-                            // Сосед в соседнем чанке
-                            Vector3 neighborChunkCoord = GetChunkCoord(neighborPos);
-                            if (Chunks.TryGetValue(neighborChunkCoord, out Chunk neighborChunk))
-                            {
-                                Vector3 localInNeighbor = neighborPos - neighborChunk.WorldPos;
-                                int nx = (int)localInNeighbor.X;
-                                int ny = (int)localInNeighbor.Y;
-                                int nz = (int)localInNeighbor.Z;
-
-                                if (nx >= 0 && nx < Chunk.SIZE && ny >= 0 && ny < Chunk.SIZE && nz >= 0 && nz < Chunk.SIZE)
-                                {
-                                    if (neighborChunk.Blocks[nx, ny, nz] != 0)
-                                        isFaceVisible = false;
-                                }
-                            }
-                        }
-
-                        if (!isFaceVisible) continue;
-
-                        // Добавляем видимую грань
                         var faceVertsLocal = cubeFaces[f];
-                        int start = verts.Count;
+                        int startIdx = verts.Count;
 
                         foreach (var v in faceVertsLocal)
-                        {
-                            verts.Add(new VertexPositionTexture(
-                                Vector3.Transform(v.Position, worldMat),
-                                v.TextureCoordinate));
-                        }
+                            verts.Add(new VertexPositionTexture(Vector3.Transform(v.Position, worldMat), v.TextureCoordinate));
 
                         for (int i = 0; i < 6; i++)
-                            inds.Add(start + i);
+                            inds.Add(startIdx + i);
                     }
                 }
+            }
+        }
 
         chunk.VertexCount = verts.Count;
 
-        // Vertex Buffer
         if (chunk.VertexBuffer == null || chunk.VertexBuffer.VertexCount < verts.Count)
         {
             chunk.VertexBuffer?.Dispose();
             chunk.VertexBuffer = new DynamicVertexBuffer(gd, VertexPositionTexture.VertexDeclaration, Math.Max(verts.Count, 1024), BufferUsage.WriteOnly);
         }
-        if (verts.Count > 0)
-            chunk.VertexBuffer.SetData(verts.ToArray());
+        if (verts.Count > 0) chunk.VertexBuffer.SetData(verts.ToArray());
 
-        // Index Buffer
         if (chunk.IndexBuffer == null || chunk.IndexBuffer.IndexCount < inds.Count)
         {
             chunk.IndexBuffer?.Dispose();
-            chunk.IndexBuffer = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits,
-                Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
+            chunk.IndexBuffer = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
         }
-        if (inds.Count > 0)
-            chunk.IndexBuffer.SetData(inds.ToArray());
+        if (inds.Count > 0) chunk.IndexBuffer.SetData(inds.ToArray());
 
         chunk.NeedsRebuild = false;
     }

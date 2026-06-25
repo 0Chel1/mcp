@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Matrix4x4 = System.Numerics.Matrix4x4;
 
 namespace MCP;
@@ -20,7 +21,7 @@ public class MainProg : Renderer
     Vector3 lightPos = new Vector3(1, 2, 4);
 
     // Camera
-    Vector3 cameraPos = new Vector3(0, 5.5f, 0);
+    Vector3 cameraPos = new Vector3(40, 30.5f, 40);
     Vector3 lookDir = new Vector3(1, 0, 0);
     Vector3 oldLookDir;
     Vector3 upDir = new Vector3(0, 1, 0);
@@ -32,18 +33,10 @@ public class MainProg : Renderer
 
     TextureAtlas atlas;
     const float HighlightDecayPerSecond = 2f;
-    BlocksManagement blocks = new BlocksManagement();
     MapGeneration mapGen = new MapGeneration();
+    BlocksManagement blocks = new BlocksManagement();
 
     int blockSelected = 0;
-
-    private int frameCount = 0;
-    private float elapsedTime = 0f;
-    private float fps = 0f;
-    private SpriteFont spriteFont;
-
-    private bool showChunkBorders = false;
-    private bool meshesInitialized = false;
     protected override void Initialize()
     {
         base.Initialize();
@@ -58,7 +51,6 @@ public class MainProg : Renderer
     protected override void LoadContent()
     {
         base.LoadContent();
-        spriteFont = Content.Load<SpriteFont>("Arial");
         atlas = TextureAtlas.FromFile(Content, "atlas-definition.xml");
         List<TextureRegion> region = new List<TextureRegion>() { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass") };
 
@@ -72,32 +64,14 @@ public class MainProg : Renderer
         }
 
         blocks.cubes.Clear();
-        blocks.AddCube(Vector3.Zero, 0);
-        mapGen.size = new Vector3(16, 2, 16);
+        //blocks.AddCube(Vector3.Zero, 1); раскоментировать если нужны тесты без карты.
+        mapGen.size = new Vector3(80, 30, 80);
         mapGen.GenMap(blocks);
-
-        //blocks.RebuildMesh(GraphicsDevice);
+        blocks.meshNeedsRebuild = true;
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (!meshesInitialized)
-        {
-            meshesInitialized = true;
-            blocks.RebuildMesh(GraphicsDevice);
-        }
-        /*float dtt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-        // FPS Counter
-        elapsedTime += dtt;
-        frameCount++;
-        if (elapsedTime >= 1.0f)
-        {
-            fps = frameCount;
-            frameCount = 0;
-            elapsedTime = 0f;
-        }*/
-
         if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) Exit();
         // Controls
         const float speed = 0.05f;
@@ -114,10 +88,11 @@ public class MainProg : Renderer
         int dx = ms.X - center.X;
         int dy = ms.Y - center.Y;
 
-        float bestDistance = 8f;
+        float bestDistance = 5f;
         blocks.currentCubeIndex = -1;
         blocks.currentFace = -1;
         Vector3 dir = Vector3.Normalize(lookDir);
+        blocks.HighlightFaceByRay(cameraPos, dir, ref bestDistance);
         if (!IsMouseVisible)
         {
             if (dx != 0 || dy != 0)
@@ -136,20 +111,28 @@ public class MainProg : Renderer
                 Mouse.SetPosition(center.X, center.Y);
             }
 
-            if (Input.Mouse.WasButtonJustPressed(MouseButton.Right) && blocks.currentFace >= 0)
+            if (Input.Mouse.WasButtonJustPressed(MouseButton.Right) && blocks.HasHighlight)
             {
-                Vector3 normal = BlocksManagement.FaceOffsets[blocks.currentFace];
-                Vector3 placePos = cameraPos + dir * bestDistance + normal * 0.5f; // грубое приближение
-                blocks.AddCube(placePos, blockSelected);
+                Vector3 normal = BlocksManagement.FaceOffsets[blocks.HighlightFace];
+                // place on neighbor cell (use integer rounding consistent with storage)
+                Vector3 placeCell = new Vector3(
+                    MathF.Round(blocks.HighlightPos.X + normal.X),
+                    MathF.Round(blocks.HighlightPos.Y + normal.Y),
+                    MathF.Round(blocks.HighlightPos.Z + normal.Z)
+                );
+                blocks.AddCube(placeCell, blockSelected);
             }
-            else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.currentFace >= 0)
+            else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.HasHighlight)
             {
-                Vector3 removePos = cameraPos + dir * bestDistance;
-                blocks.RemoveCube(removePos);
+                // remove the exact block we hit
+                Vector3 removeCell = new Vector3(
+                    MathF.Round(blocks.HighlightPos.X),
+                    MathF.Round(blocks.HighlightPos.Y),
+                    MathF.Round(blocks.HighlightPos.Z)
+                );
+                blocks.RemoveCube(removeCell);
             }
         }
-
-        blocks.HighlightFaceByRay(cameraPos, dir, ref bestDistance);
 
 
 
@@ -204,21 +187,44 @@ public class MainProg : Renderer
 
         foreach (var chunk in blocks.chunkManager.Chunks.Values)
         {
-            if (chunk.VertexBuffer == null || chunk.VertexCount == 0) continue;
+            int primitiveCount = chunk.IndexBuffer.IndexCount / 3;
 
             foreach (var pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 GraphicsDevice.SetVertexBuffer(chunk.VertexBuffer);
                 GraphicsDevice.Indices = chunk.IndexBuffer;
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.VertexCount, 0, chunk.VertexCount / 3);
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.VertexCount, 0, primitiveCount);
             }
         }
 
-        // FPS
-        /*SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullCounterClockwise);
-        SpriteBatch.DrawString(spriteFont, $"FPS: {fps:F0}", new Vector2(10, 10), Color.Yellow);
-        SpriteBatch.End();*/
+        if (blocks.HasHighlight)
+        {
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            basicEffect.TextureEnabled = false;
+            basicEffect.VertexColorEnabled = true;
+
+            var type = blocks.GetBlockType(blocks.HighlightPos);
+            var faces = blocks.faceVerts[type % blocks.faceVerts.Count];
+            var face = faces[blocks.HighlightFace];
+            var highlightVerts = new VertexPositionColor[6];
+            var worldMat = Matrix.CreateTranslation(blocks.HighlightPos);
+            for (int i = 0; i < 6; i++)
+            {
+                var p = Vector3.Transform(face[i].Position, worldMat);
+                highlightVerts[i] = new VertexPositionColor(p, new Color(0.7f, 0.7f, 0.7f, 0.5f));
+            }
+
+            foreach (var pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, highlightVerts, 0, 2);
+            }
+
+            GraphicsDevice.BlendState = BlendState.Opaque;
+            basicEffect.TextureEnabled = true;
+            basicEffect.VertexColorEnabled = false;
+        }
 
         base.Draw(gameTime);
     }

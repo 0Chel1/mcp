@@ -70,11 +70,17 @@ public class BlocksManagement
     public IndexBuffer indexBuffer;
     public bool meshNeedsRebuild = true;
 
-    private Dictionary<Vector3, int> positionToIndex = new Dictionary<Vector3, int>();
+    public bool HasHighlight { get; private set; } = false;
+    public Vector3 HighlightPos { get; private set; }
+    public int HighlightFace { get; private set; } = -1;
+    public Vector3 HighlightHitPoint { get; private set; }
+
+    public Dictionary<Vector3, int> WorldBlocks = new Dictionary<Vector3, int>();
 
     public BlocksManagement()
     {
         chunkManager = new ChunkManager(this);
+        faceEmission = new List<float[]>();
     }
 
     /// <summary>
@@ -175,72 +181,132 @@ public class BlocksManagement
     }
 
     /// <summary>
-    /// Performs ray-triangle tests against each face's two triangles in local space transformed by world. 
-    /// If hit, sets emission for that face on the given cubeIndex.
+    /// Улучшенный DDA raycast. Значительно быстрее brute-force.
     /// </summary>
-    /// <param name="origin">Ray start point.</param>
-    /// <param name="direction">Direction in whick ray should tavel.</param>
-    /// <param name="world">World matrix.</param>
-    /// <param name="cubeIndex">Cube that vas hited.</param>
     public bool HighlightFaceByRay(Vector3 origin, Vector3 direction, ref float bestDistance)
     {
         currentCubeIndex = -1;
         currentFace = -1;
+        HasHighlight = false;
+        HighlightFace = -1;
+        HighlightHitPoint = Vector3.Zero;
 
         Vector3 dir = Vector3.Normalize(direction);
 
-        foreach (var chunk in chunkManager.Chunks.Values)
+        Vector3 currentVoxel = new Vector3(
+            MathF.Floor(origin.X),
+            MathF.Floor(origin.Y),
+            MathF.Floor(origin.Z)
+        );
+
+        // Направление шага (+1 или -1)
+        Vector3 step = new Vector3(
+            dir.X > 0 ? 1 : (dir.X < 0 ? -1 : 0),
+            dir.Y > 0 ? 1 : (dir.Y < 0 ? -1 : 0),
+            dir.Z > 0 ? 1 : (dir.Z < 0 ? -1 : 0)
+        );
+
+        // Расстояние до следующей грани по каждой оси
+        Vector3 tDelta = new Vector3(
+            step.X == 0 ? float.PositiveInfinity : MathF.Abs(1f / dir.X),
+            step.Y == 0 ? float.PositiveInfinity : MathF.Abs(1f / dir.Y),
+            step.Z == 0 ? float.PositiveInfinity : MathF.Abs(1f / dir.Z)
+        );
+
+        // Расстояние до первой грани
+        Vector3 tMax = new Vector3(
+            step.X > 0 ? (currentVoxel.X + 1 - origin.X) / dir.X :
+                  step.X < 0 ? (currentVoxel.X - origin.X) / dir.X : float.PositiveInfinity,
+            step.Y > 0 ? (currentVoxel.Y + 1 - origin.Y) / dir.Y :
+                  step.Y < 0 ? (currentVoxel.Y - origin.Y) / dir.Y : float.PositiveInfinity,
+            step.Z > 0 ? (currentVoxel.Z + 1 - origin.Z) / dir.Z :
+                  step.Z < 0 ? (currentVoxel.Z - origin.Z) / dir.Z : float.PositiveInfinity
+        );
+
+        int maxSteps = 64; // защита от бесконечного цикла
+        int steps = 0;
+
+        while (steps < maxSteps)
         {
-            // Простая отсечка по расстоянию
-            if ((chunk.WorldPos + new Vector3(8, 8, 8) - origin).LengthSquared() > 300f)
-                continue;
+            Vector3 voxelPos = new Vector3(
+                MathF.Round(currentVoxel.X),
+                MathF.Round(currentVoxel.Y),
+                MathF.Round(currentVoxel.Z)
+            );
 
-            // Проверяем все блоки в чанке (можно оптимизировать AABB позже)
-            for (int lx = 0; lx < Chunk.SIZE; lx++)
-                for (int ly = 0; ly < Chunk.SIZE; ly++)
-                    for (int lz = 0; lz < Chunk.SIZE; lz++)
-                    {
-                        if (chunk.Blocks[lx, ly, lz] == 0) continue;
-
-                        Vector3 blockWorldPos = chunk.WorldPos + new Vector3(lx, ly, lz);
-                        Matrix world = Matrix.CreateTranslation(blockWorldPos);
-
-                        // Вызываем старый метод для конкретного блока
-                        int tempIndex = -1; // пока не используем глобальный индекс
-                        if (HighlightFaceByRaySingle(origin, dir, world, ref bestDistance, ref tempIndex, chunk, lx, ly, lz))
-                            return true;
-                    }
-        }
-        return false;
-    }
-
-    private bool HighlightFaceByRaySingle(Vector3 origin, Vector3 dir, Matrix world, ref float bestDistance, ref int hitFace, Chunk chunk, int lx, int ly, int lz)
-    {
-        var fvArray = faceVerts[0]; // предполагаем 0 = cobblestone
-
-        for (int f = 0; f < 6; f++)
-        {
-            var fv = fvArray[f];
-            for (int tri = 0; tri < 2; tri++)
+            if (HasBlock(voxelPos))
             {
-                int baseIdx = tri * 3;
-                Vector3 a = Vector3.Transform(fv[baseIdx].Position, world);
-                Vector3 b = Vector3.Transform(fv[baseIdx + 1].Position, world);
-                Vector3 c = Vector3.Transform(fv[baseIdx + 2].Position, world);
+                // Нашли блок — теперь определяем, по какой грани попали
+                float t = MathF.Min(tMax.X, MathF.Min(tMax.Y, tMax.Z));
+                Vector3 hitPoint = origin + dir * t;
 
-                if (Raycast.RayIntersectsTriangle(origin, dir, 200f, a, b, c, out float t, out _, out _, false))
+                // Определяем нормаль (какая грань была пробита)
+                int face = -1;
+                float minDist = float.MaxValue;
+
+                for (int f = 0; f < 6; f++)
                 {
-                    if (t >= 0f && t < bestDistance)
+                    Vector3 neighbor = voxelPos + FaceOffsets[f];
+                    if (!HasBlock(neighbor)) // только видимые грани
                     {
-                        bestDistance = t;
-                        currentFace = f;
-                        // currentCubeIndex можно убрать позже — он больше не нужен
-                        return true;
+                        // Простая проверка, какая грань ближе всего к точке попадания
+                        float distToPlane = Vector3.Dot(hitPoint - voxelPos, FaceOffsets[f]);
+                        if (distToPlane >= 0 && distToPlane < 1.01f && distToPlane < minDist)
+                        {
+                            minDist = distToPlane;
+                            face = f;
+                        }
                     }
                 }
+
+                if (face != -1 && t < bestDistance)
+                {
+                    bestDistance = t;
+                    currentFace = face;
+                    HasHighlight = true;
+                    HighlightPos = voxelPos;
+                    HighlightFace = face;
+                    HighlightHitPoint = hitPoint;
+                    return true;
+                }
             }
+
+            // Переходим в следующую клетку
+            if (tMax.X < tMax.Y)
+            {
+                if (tMax.X < tMax.Z)
+                {
+                    tMax.X += tDelta.X;
+                    currentVoxel.X += step.X;
+                }
+                else
+                {
+                    tMax.Z += tDelta.Z;
+                    currentVoxel.Z += step.Z;
+                }
+            }
+            else
+            {
+                if (tMax.Y < tMax.Z)
+                {
+                    tMax.Y += tDelta.Y;
+                    currentVoxel.Y += step.Y;
+                }
+                else
+                {
+                    tMax.Z += tDelta.Z;
+                    currentVoxel.Z += step.Z;
+                }
+            }
+
+            steps++;
+
+            // Выходим, если ушли слишком далеко
+            if ((voxelPos - origin).Length() > bestDistance + 2f)
+                break;
         }
-        return false;
+
+        return HasHighlight;
     }
 
     /// <summary>
@@ -249,7 +315,11 @@ public class BlocksManagement
     /// <param name="position"></param>
     public void AddCube(Vector3 position, int blockType)
     {
-        chunkManager.AddBlock(position, blockType);
+        var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
+        if (WorldBlocks.ContainsKey(p)) return;
+
+        WorldBlocks[p] = blockType;
+        chunkManager.MarkChunkDirty(p);
     }
 
     /// <summary>
@@ -324,7 +394,7 @@ public class BlocksManagement
     /// <summary>
     /// Recompute visibility for all cubes but in 1 block radius around the position.
     /// </summary>
-    private void UpdateLocalVisibility(Vector3 center)
+    public void UpdateLocalVisibility(Vector3 center)
     {
         var p = new Vector3(MathF.Round(center.X), MathF.Round(center.Y), MathF.Round(center.Z));
 
@@ -372,9 +442,23 @@ public class BlocksManagement
     /// Removes cube with specific index.
     /// </summary>
     /// <param name="index"></param>
-    public void RemoveCube(Vector3 worldPos)
+    public void RemoveCube(Vector3 position)
     {
-        chunkManager.RemoveBlock(worldPos);
+        var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
+        WorldBlocks.Remove(p);
+        chunkManager.MarkChunkDirty(p);
+    }
+
+    public bool HasBlock(Vector3 position)
+    {
+        var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
+        return WorldBlocks.ContainsKey(p);
+    }
+
+    public int GetBlockType(Vector3 position)
+    {
+        var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
+        return WorldBlocks.TryGetValue(p, out int type) ? type : 0;
     }
 
     public void RebuildMesh(GraphicsDevice graphicsDevice)
