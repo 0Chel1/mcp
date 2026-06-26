@@ -41,11 +41,6 @@ public class Core : Game
     public static InputManager Input { get; private set; }
 
     /// <summary>
-    /// Gets or Sets a value that indicates if the game should exit when the esc key on the keyboard is pressed.
-    /// </summary>
-    public static bool ExitOnEscape { get; set; }
-
-    /// <summary>
     /// Creates a new Core instance.
     /// </summary>
     /// <param name="title">The title to display in the title bar of the game window.</param>
@@ -86,9 +81,6 @@ public class Core : Game
 
         // Mouse is visible by default.
         IsMouseVisible = true;
-
-        // Exit on escape is true by default
-        ExitOnEscape = true;
     }
 
     protected override void Initialize()
@@ -110,11 +102,6 @@ public class Core : Game
     {
         // Update the input manager.
         Input.Update(gameTime);
-
-        if (ExitOnEscape && Input.Keyboard.IsKeyDown(Keys.Escape))
-        {
-            Exit();
-        }
 
         base.Update(gameTime);
     }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 
 namespace MCP.Features;
 
@@ -22,6 +19,7 @@ public class MapGeneration
                 for (int x = 0; x < width; x++)
                 {
                     if(y == height - 1) blocks.AddBlock(new Vector3(x, y, z), 1);
+                    else if(y > height - 5 && y < height - 1) blocks.AddBlock(new Vector3(x, y, z), 2);
                     else blocks.AddBlock(new Vector3(x, y, z), 0);
                 }
             }

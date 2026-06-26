@@ -23,7 +23,7 @@ public class Renderer : Core
         projectionDirty = true;
     }
 
-    public Renderer() : base("mcp", 1640, 860, false) { }
+    public Renderer() : base("mcp", 1920, 1080, true) { }
     public void DrawTriangle(Vector2[] p, Color color)
     {
         if (triangleVertices == null) triangleVertices = new VertexPositionColor[3];

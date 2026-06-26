@@ -4,6 +4,7 @@
 	<Regions>
 		<Region name="cobblestone" x="0" y="0" width="16" height="16" />
 		<Region name="grass" x="16" y="0" width="16" height="16" />
+		<Region name="dirt" x="32" y="0" width="16" height="16" />
 		<Region name="default" x="112" y="112" width="16" height="16"/>
 	</Regions>
 </TextureAtlas>

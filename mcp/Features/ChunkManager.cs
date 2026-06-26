@@ -117,8 +117,7 @@ public class ChunkManager
                         foreach (var v in faceVertsLocal)
                             verts.Add(new VertexPositionTexture(Vector3.Transform(v.Position, worldMat), v.TextureCoordinate));
 
-                        for (int i = 0; i < 6; i++)
-                            inds.Add(startIdx + i);
+                        for (int i = 0; i < 6; i++) inds.Add(startIdx + i);
                     }
                 }
 
@@ -130,10 +129,8 @@ public class ChunkManager
             chunk.VertexBuffer = new DynamicVertexBuffer(gd, VertexPositionTexture.VertexDeclaration,
                 Math.Max(verts.Count, 1024), BufferUsage.WriteOnly);
         }
-        if (verts.Count > 0)
-            chunk.VertexBuffer.SetData(verts.ToArray());
-        else
-            chunk.VertexBuffer.SetData(new VertexPositionTexture[0]);
+        if (verts.Count > 0) chunk.VertexBuffer.SetData(verts.ToArray());
+        else chunk.VertexBuffer.SetData(new VertexPositionTexture[Math.Max(verts.Count, 1024)]);
 
         if (chunk.IndexBuffer == null || chunk.IndexBuffer.IndexCount < inds.Count)
         {
@@ -141,10 +138,8 @@ public class ChunkManager
             chunk.IndexBuffer = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits,
                 Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
         }
-        if (inds.Count > 0)
-            chunk.IndexBuffer.SetData(inds.ToArray());
-        else if (chunk.IndexBuffer != null)
-            chunk.IndexBuffer.SetData(new int[0]);
+        if (inds.Count > 0) chunk.IndexBuffer.SetData(inds.ToArray());
+        else chunk.IndexBuffer.SetData(new int[Math.Max(inds.Count, 1024)]);
 
         chunk.NeedsRebuild = false;
     }

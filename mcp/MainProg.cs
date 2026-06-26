@@ -17,7 +17,7 @@ public class MainProg : Renderer
     //Vector3 lightPos = new Vector3(1, 2, 4);
 
     // Camera
-    Vector3 cameraPos = new Vector3(40, 30.5f, 40);
+    Vector3 cameraPos = new Vector3(40, 31f, 40);
     Vector3 lookDir = new Vector3(1, 0, 0);
     Vector3 oldLookDir;
     Vector3 upDir = new Vector3(0, 1, 0);
@@ -25,7 +25,9 @@ public class MainProg : Renderer
     float yaw = 0f;
     float pitch = 0f;
     const float mouseSens = 0.005f;
-    const float maxPitch = 1.47f;
+    const float maxPitch = 1.57f;
+    float speed = 0.08f;
+    bool speedUp = false;
 
     TextureAtlas atlas;
     const float HighlightDecayPerSecond = 2f;
@@ -48,7 +50,7 @@ public class MainProg : Renderer
     {
         base.LoadContent();
         atlas = TextureAtlas.FromFile(Content, "atlas-definition.xml");
-        List<TextureRegion> region = new List<TextureRegion>() { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass") };
+        List<TextureRegion> region = new List<TextureRegion>() { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass"), atlas.GetRegion("dirt") };
 
         for(int i = 0; i < region.Count; i++)
         {
@@ -59,24 +61,40 @@ public class MainProg : Renderer
             blocks.faceVerts.Add(blocks.BuildBlockFaceVertexArrays(u0, v0, u1, v1));
         }
 
-        blocks.blocks.Clear();
+        //blocks.blocks.Clear();
         //blocks.AddBlock(Vector3.Zero, 1); раскоментировать если нужны тесты без карты.
-        mapGen.size = new Vector3(80, 30, 80);
-        mapGen.GenMap(blocks);
+        blocks.LoadWorld("world.dat");
+        if (blocks.WorldBlocks.Count == 0) // если файла не было
+        {
+            mapGen.size = new Vector3(80, 30, 80);
+            mapGen.GenMap(blocks);
+        }
+
         blocks.meshNeedsRebuild = true;
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) Exit();
+        if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) 
+        {
+            blocks.SaveWorld("world.dat");
+            Exit();
+        }
         // Controls
-        const float speed = 0.05f;
         if (Input.Keyboard.IsKeyDown(Keys.W)) cameraPos += lookDir * speed;
         if(Input.Keyboard.IsKeyDown(Keys.S)) cameraPos -= lookDir * speed;
         if(Input.Keyboard.IsKeyDown(Keys.A)) cameraPos -= Vector3.Normalize(Vector3.Cross(lookDir, upDir)) * speed;
         if(Input.Keyboard.IsKeyDown(Keys.D)) cameraPos += Vector3.Normalize(Vector3.Cross(lookDir, upDir)) * speed;
         if(Input.Keyboard.IsKeyDown(Keys.Space)) cameraPos += upDir * speed;
         if(Input.Keyboard.IsKeyDown(Keys.LeftShift)) cameraPos -= upDir * speed;
+
+        if (Input.Keyboard.IsKeyDown(Keys.LeftControl)) speedUp = true;
+        else speedUp = false;
+
+        if (speedUp) speed = 0.2f;
+        else speed = 0.08f;
+
+        //if(Input.Keyboard.WasKeyJustPressed(Keys.F)) 
 
         // Relative mouse look
         var center = new Point(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
@@ -116,7 +134,6 @@ public class MainProg : Renderer
                     MathF.Round(blocks.HighlightPos.Z + normal.Z)
                 );
                 blocks.AddBlock(placeCell, blockSelected);
-                blocks.chunkManager.RebuildMeshes(GraphicsDevice);
             }
             else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.HasHighlight)
             {
@@ -140,6 +157,7 @@ public class MainProg : Renderer
                 {
                     case 1: blockSelected = 0; break;
                     case 2: blockSelected = 1; break;
+                    case 3: blockSelected = 2; break;
                 }
                     
             }

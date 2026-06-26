@@ -4,6 +4,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 
 namespace MCP.Features;
 
@@ -264,13 +267,15 @@ public class BlocksManagement
 
         WorldBlocks[p] = blockType;
         chunkManager.MarkChunkDirty(p);
+        //chunkManager.AddBlock(p, blockType);
     }
 
     public void RemoveBlock(Vector3 position)
     {
         var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
         WorldBlocks.Remove(p);
-        chunkManager.MarkChunkDirty(p);
+        //chunkManager.MarkChunkDirty(p);
+        chunkManager.RemoveBlock(p);
     }
 
     /// <summary>
@@ -293,6 +298,64 @@ public class BlocksManagement
     public void RebuildMesh(GraphicsDevice graphicsDevice)
     {
         chunkManager.RebuildMeshes(graphicsDevice);
+    }
+
+    public void SaveWorld(string filePath = "world.dat") //не совместимо с Minecraft мирами!
+    {
+        try
+        {
+            using var fs = new FileStream(filePath, FileMode.Create);
+            using var bw = new BinaryWriter(fs);
+
+            bw.Write(WorldBlocks.Count);
+
+            foreach (var pair in WorldBlocks)
+            {
+                Vector3 pos = pair.Key;
+                bw.Write(pos.X);
+                bw.Write(pos.Y);
+                bw.Write(pos.Z);
+                bw.Write(pair.Value);
+            }
+
+            Debug.WriteLine($"Мир сохранён: {WorldBlocks.Count} блоков");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Ошибка сохранения: {ex.Message}");
+        }
+    }
+
+    public void LoadWorld(string fileName = "world.dat")
+    {
+        try
+        {
+            WorldBlocks.Clear();
+            chunkManager.Chunks.Clear();
+
+            using var fs = new FileStream(fileName, FileMode.Open);
+            using var br = new BinaryReader(fs);
+
+            int count = br.ReadInt32();
+
+            for (int i = 0; i < count; i++)
+            {
+                float x = br.ReadSingle();
+                float y = br.ReadSingle();
+                float z = br.ReadSingle();
+                int type = br.ReadInt32();
+
+                Vector3 pos = new Vector3(x, y, z);
+                WorldBlocks[pos] = type;
+                chunkManager.MarkChunkDirty(pos);
+            }
+
+            Debug.WriteLine($"Мир загружен: {WorldBlocks.Count} блоков");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
     }
 }
 
