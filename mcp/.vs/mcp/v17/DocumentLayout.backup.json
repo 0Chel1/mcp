@@ -15,6 +15,10 @@
       "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\physicsstructure.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\chunkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\chunkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -26,11 +30,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Renderer.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
+              "RelativeDocumentMoniker": "Renderer.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
+              "RelativeToolTip": "Renderer.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAxwBAAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-27T11:59:57.965Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -40,14 +57,14 @@
               "RelativeDocumentMoniker": "Features\\PhysicsStructure.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\PhysicsStructure.cs",
               "RelativeToolTip": "Features\\PhysicsStructure.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAbAAAAAAAAAA==",
+              "ViewState": "AgIAAEwAAAAAAAAAAAAwwCcAAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-26T18:37:31.713Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "ChunkManager.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\ChunkManager.cs",
               "RelativeDocumentMoniker": "Features\\ChunkManager.cs",
@@ -55,8 +72,7 @@
               "RelativeToolTip": "Features\\ChunkManager.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-26T18:41:40.255Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-26T18:41:40.255Z"
             },
             {
               "$type": "Document",
@@ -66,7 +82,7 @@
               "RelativeDocumentMoniker": "Features\\BlocksManagement.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\BlocksManagement.cs",
               "RelativeToolTip": "Features\\BlocksManagement.cs",
-              "ViewState": "AgIAAAsBAAAAAAAAAAAswBcBAAAKAAAAAAAAAA==",
+              "ViewState": "AgIAALYBAAAAAAAAAAAQwL0BAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-22T07:46:13.724Z",
               "EditorCaption": ""
@@ -79,7 +95,7 @@
               "RelativeDocumentMoniker": "MainProg.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\MainProg.cs",
               "RelativeToolTip": "MainProg.cs",
-              "ViewState": "AgIAAK4AAAAAAAAAAAAuwL4AAAAwAAAAAAAAAA==",
+              "ViewState": "AgIAAH0AAAAAAAAAAAAhwJIAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-18T17:34:42.466Z",
               "EditorCaption": ""

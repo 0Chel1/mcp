@@ -73,7 +73,6 @@ public class BlocksManagement
     public DynamicVertexBuffer vertexBuffer;
     public IndexBuffer indexBuffer;
     public bool meshNeedsRebuild = true;
-
     public bool HasHighlight { get; private set; } = false;
     public Vector3 HighlightPos { get; private set; }
     public int HighlightFace { get; private set; } = -1;
@@ -277,8 +276,8 @@ public class BlocksManagement
     {
         var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
         WorldBlocks.Remove(p);
-        //chunkManager.RemoveBlock(p);
-        chunkManager.MarkChunkDirty(p);
+        chunkManager.RemoveBlock(p);
+        //chunkManager.MarkChunkDirty(p);
         CheckAndDetachFloatingStructures(p);
 
     }
@@ -395,8 +394,7 @@ public class BlocksManagement
         foreach (var (pos, _) in structureBlocks)
         {
             Vector3 below = pos + new Vector3(0, -1, 0);
-            if (HasBlock(below))
-                return true;
+            if (HasBlock(below)) return true;
 
             if (!visited.Contains(pos))
             {
@@ -411,8 +409,7 @@ public class BlocksManagement
             Vector3 current = queue.Dequeue();
 
             Vector3 below = current + new Vector3(0, -1, 0);
-            if (HasBlock(below))
-                return true;
+            if (HasBlock(below)) return true;
 
             foreach (var offset in FaceOffsets)
             {
@@ -446,22 +443,46 @@ public class BlocksManagement
 
     public void CheckAndDetachFloatingStructures(Vector3 brokenPos)
     {
+        const float maxCheckDistance =  32f;
+
         HashSet<Vector3> visited = new HashSet<Vector3>();
-        List<Vector3> toCheck = new List<Vector3>();
+        Queue<Vector3> queue = new Queue<Vector3>();
 
         foreach (var offset in FaceOffsets)
         {
             Vector3 neighbor = brokenPos + offset;
             if (HasBlock(neighbor) && !visited.Contains(neighbor))
             {
-                List<(Vector3, int)> structure = new List<(Vector3, int)>();
-                FindConnectedStructure(neighbor, visited, (structure));
+                visited.Add(neighbor);
+                queue.Enqueue(neighbor);
+            }
+        }
 
-                if (!IsStructureSupported(structure))
+        List<(Vector3, int)> potentialStructure = new List<(Vector3, int)>();
+
+        while (queue.Count > 0)
+        {
+            Vector3 current = queue.Dequeue();
+            int type = GetBlockType(current);
+            potentialStructure.Add((current, type));
+
+            if (Vector3.DistanceSquared(current, brokenPos) > maxCheckDistance * maxCheckDistance)
+                continue;
+
+            foreach (var offset in FaceOffsets)
+            {
+                Vector3 neighbor = current + offset;
+                if (!visited.Contains(neighbor) && HasBlock(neighbor))
                 {
-                    DetachStructure(structure);
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
                 }
             }
+        }
+
+        if (potentialStructure.Count > 2 && !IsStructureSupported(potentialStructure))
+        {
+            DetachStructure(potentialStructure);
         }
     }
 }

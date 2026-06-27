@@ -15,6 +15,7 @@ public class Renderer : Core
     public Vector2 ZRange { get; set; } = new Vector2(0.1f, 1000f);
     private Matrix4x4 projMat;
     private bool projectionDirty = true;
+    public static Renderer Instance { get; private set; }
     public void SetProjectionParameters(Vector2 resolution, float fov, Vector2 z)
     {
         Resolution = resolution;
@@ -23,7 +24,7 @@ public class Renderer : Core
         projectionDirty = true;
     }
 
-    public Renderer() : base("mcp", 1920, 1080, true) { }
+    public Renderer() : base("mcp", 1920, 1080, true) { Instance = this; }
     public void DrawTriangle(Vector2[] p, Color color)
     {
         if (triangleVertices == null) triangleVertices = new VertexPositionColor[3];

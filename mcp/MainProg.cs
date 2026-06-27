@@ -144,7 +144,7 @@ public class MainProg : Renderer
                     MathF.Round(blocks.HighlightPos.Z)
                 );
                 blocks.RemoveBlock(removeCell);
-                blocks.chunkManager.RebuildMeshes(GraphicsDevice);
+                //blocks.chunkManager.RebuildMeshes(GraphicsDevice);
             }
         }
 
