@@ -1,4 +1,5 @@
 ﻿using IDEOS.Input;
+using mcp.Features;
 using MCP.Features;
 using MCP.Graphics;
 using Microsoft.Xna.Framework;
@@ -77,7 +78,7 @@ public class MainProg : Renderer
     {
         if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) 
         {
-            blocks.SaveWorld("world.dat");
+            //blocks.SaveWorld("world.dat");
             Exit();
         }
         // Controls
@@ -181,6 +182,18 @@ public class MainProg : Renderer
             }
         }
 
+        //Физические структуры
+        for (int i = blocks.ActiveStructures.Count - 1; i >= 0; i--)
+        {
+            var s = blocks.ActiveStructures[i];
+            s.Update((float)gameTime.ElapsedGameTime.TotalSeconds, blocks);
+
+            if (s.Velocity.Length() < 0.1f && s.Velocity.Length() < 0.1f)
+            {
+                blocks.ActiveStructures.RemoveAt(i);
+            }
+        }
+
         base.Update(gameTime);
     }
 
@@ -238,6 +251,39 @@ public class MainProg : Renderer
             GraphicsDevice.BlendState = BlendState.Opaque;
             basicEffect.TextureEnabled = true;
             basicEffect.VertexColorEnabled = false;
+        }
+
+        //Физические структуры
+        if (blocks.ActiveStructures.Count > 0)
+        {
+            foreach (var structure in blocks.ActiveStructures)
+            {
+                foreach (var (pos, type) in structure.Blocks)
+                {
+                    var cubeFaces = blocks.faceVerts[type % blocks.faceVerts.Count];
+                    Matrix worldMat = Matrix.CreateTranslation(pos);
+
+                    for (int f = 0; f < 6; f++)
+                    {
+                        var face = cubeFaces[f];
+                        var verts = new VertexPositionTexture[6];
+
+                        for (int i = 0; i < 6; i++)
+                        {
+                            verts[i] = new VertexPositionTexture(
+                                Vector3.Transform(face[i].Position, worldMat),
+                                face[i].TextureCoordinate
+                            );
+                        }
+
+                        foreach (var pass in basicEffect.CurrentTechnique.Passes)
+                        {
+                            pass.Apply();
+                            GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, verts, 0, 2);
+                        }
+                    }
+                }
+            }
         }
 
         base.Draw(gameTime);

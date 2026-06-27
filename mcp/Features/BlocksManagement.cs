@@ -1,4 +1,5 @@
-﻿using MCP.Graphics;
+﻿using mcp.Features;
+using MCP.Graphics;
 using MCP.Physics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -79,6 +80,8 @@ public class BlocksManagement
     public Vector3 HighlightHitPoint { get; private set; }
 
     public Dictionary<Vector3, int> WorldBlocks = new Dictionary<Vector3, int>();
+
+    public List<PhysicsStructure> ActiveStructures = new List<PhysicsStructure>();
 
     public BlocksManagement()
     {
@@ -274,8 +277,10 @@ public class BlocksManagement
     {
         var p = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
         WorldBlocks.Remove(p);
-        //chunkManager.MarkChunkDirty(p);
-        chunkManager.RemoveBlock(p);
+        //chunkManager.RemoveBlock(p);
+        chunkManager.MarkChunkDirty(p);
+        CheckAndDetachFloatingStructures(p);
+
     }
 
     /// <summary>
@@ -355,6 +360,108 @@ public class BlocksManagement
         catch (Exception ex)
         {
             Debug.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+    }
+
+    private void FindConnectedStructure(Vector3 start, HashSet<Vector3> visited, List<(Vector3, int)> structure)
+    {
+        var queue = new Queue<Vector3>();
+        queue.Enqueue(start);
+        visited.Add(start);
+
+        while (queue.Count > 0)
+        {
+            Vector3 current = queue.Dequeue();
+            int type = GetBlockType(current);
+            structure.Add((current, type));
+
+            foreach (var offset in FaceOffsets)
+            {
+                Vector3 neighbor = current + offset;
+                if (!visited.Contains(neighbor) && HasBlock(neighbor))
+                {
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+    }
+
+    private bool IsStructureSupported(List<(Vector3, int)> structureBlocks)
+    {
+        HashSet<Vector3> visited = new();
+        Queue<Vector3> queue = new();
+
+        foreach (var (pos, _) in structureBlocks)
+        {
+            Vector3 below = pos + new Vector3(0, -1, 0);
+            if (HasBlock(below))
+                return true;
+
+            if (!visited.Contains(pos))
+            {
+                visited.Add(pos);
+                queue.Enqueue(pos);
+            }
+        }
+
+        // Flood fill вниз в поисках опоры
+        while (queue.Count > 0)
+        {
+            Vector3 current = queue.Dequeue();
+
+            Vector3 below = current + new Vector3(0, -1, 0);
+            if (HasBlock(below))
+                return true;
+
+            foreach (var offset in FaceOffsets)
+            {
+                Vector3 neighbor = current + offset;
+                if (!visited.Contains(neighbor) && HasBlock(neighbor))
+                {
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void DetachStructure(List<(Vector3, int)> blocks)
+    {
+        var structure = new PhysicsStructure(blocks);
+
+        /*structure.Velocity = new Vector3(...);
+        structure.AngularVelocity = new Vector3(...);*/
+
+        foreach (var (pos, type) in blocks)
+        {
+            WorldBlocks.Remove(pos);
+            chunkManager.MarkChunkDirty(pos);
+        }
+
+        ActiveStructures.Add(structure);
+    }
+
+    public void CheckAndDetachFloatingStructures(Vector3 brokenPos)
+    {
+        HashSet<Vector3> visited = new HashSet<Vector3>();
+        List<Vector3> toCheck = new List<Vector3>();
+
+        foreach (var offset in FaceOffsets)
+        {
+            Vector3 neighbor = brokenPos + offset;
+            if (HasBlock(neighbor) && !visited.Contains(neighbor))
+            {
+                List<(Vector3, int)> structure = new List<(Vector3, int)>();
+                FindConnectedStructure(neighbor, visited, (structure));
+
+                if (!IsStructureSupported(structure))
+                {
+                    DetachStructure(structure);
+                }
+            }
         }
     }
 }
