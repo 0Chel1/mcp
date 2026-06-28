@@ -362,128 +362,106 @@ public class BlocksManagement
         }
     }
 
-    private void FindConnectedStructure(Vector3 start, HashSet<Vector3> visited, List<(Vector3, int)> structure)
+
+    public void CheckAndDetachFloatingStructures(Vector3 brokenPos)
     {
-        var queue = new Queue<Vector3>();
-        queue.Enqueue(start);
-        visited.Add(start);
+        HashSet<Vector3> globallyVisited = new HashSet<Vector3>();
 
-        while (queue.Count > 0)
+        int minBfsY = (int)brokenPos.Y;
+
+        foreach (var offset in FaceOffsets)
         {
-            Vector3 current = queue.Dequeue();
-            int type = GetBlockType(current);
-            structure.Add((current, type));
+            Vector3 start = brokenPos + offset;
+            if (!HasBlock(start) || globallyVisited.Contains(start))
+                continue;
 
-            foreach (var offset in FaceOffsets)
+            if (start.Y < minBfsY)
+                continue;
+
+            var component = new List<(Vector3, int)>();
+            var queue = new Queue<Vector3>();
+            queue.Enqueue(start);
+            globallyVisited.Add(start);
+
+            while (queue.Count > 0)
             {
-                Vector3 neighbor = current + offset;
-                if (!visited.Contains(neighbor) && HasBlock(neighbor))
+                Vector3 current = queue.Dequeue();
+                component.Add((current, GetBlockType(current)));
+
+                foreach (var off in FaceOffsets)
                 {
-                    visited.Add(neighbor);
-                    queue.Enqueue(neighbor);
+                    Vector3 neighbor = current + off;
+                    if (neighbor.Y < minBfsY)
+                        continue;
+                    if (!globallyVisited.Contains(neighbor) && HasBlock(neighbor))
+                    {
+                        globallyVisited.Add(neighbor);
+                        queue.Enqueue(neighbor);
+                    }
                 }
+            }
+
+            if (component.Count > 0 && !IsComponentSupported(component))
+            {
+                DetachStructure(component, brokenPos);
             }
         }
     }
 
-    private bool IsStructureSupported(List<(Vector3, int)> structureBlocks)
+    /// <summary>
+    /// Компонента считается опираемой, если хотя бы один её блок стоит на блоке,
+    /// который НЕ входит в эту же компоненту (т.е. является частью внешнего мира).
+    /// </summary>
+    private bool IsComponentSupported(List<(Vector3, int)> component)
     {
-        HashSet<Vector3> visited = new();
-        Queue<Vector3> queue = new();
+        var componentSet = new HashSet<Vector3>();
+        foreach (var (pos, _) in component)
+            componentSet.Add(pos);
 
-        foreach (var (pos, _) in structureBlocks)
+        foreach (var (pos, _) in component)
         {
             Vector3 below = pos + new Vector3(0, -1, 0);
-            if (HasBlock(below)) return true;
-
-            if (!visited.Contains(pos))
-            {
-                visited.Add(pos);
-                queue.Enqueue(pos);
-            }
+            if (HasBlock(below) && !componentSet.Contains(below))
+                return true;
         }
-
-        // Flood fill вниз в поисках опоры
-        while (queue.Count > 0)
-        {
-            Vector3 current = queue.Dequeue();
-
-            Vector3 below = current + new Vector3(0, -1, 0);
-            if (HasBlock(below)) return true;
-
-            foreach (var offset in FaceOffsets)
-            {
-                Vector3 neighbor = current + offset;
-                if (!visited.Contains(neighbor) && HasBlock(neighbor))
-                {
-                    visited.Add(neighbor);
-                    queue.Enqueue(neighbor);
-                }
-            }
-        }
-
         return false;
     }
 
-    private void DetachStructure(List<(Vector3, int)> blocks)
+    /// <summary>
+    /// Создаёт PhysicsStructure из списка блоков, удаляет эти блоки из мира
+    /// и добавляет структуру в ActiveStructures.
+    /// </summary>
+    /// <param name="blocks">Список блоков (мировые позиции + типы).</param>
+    /// <param name="brokenPos">Позиция сломанного блока — нужна, чтобы придать
+    /// структуре начальное вращение в сторону сломанной опоры.</param>
+    private void DetachStructure(List<(Vector3, int)> blocks, Vector3 brokenPos)
     {
         var structure = new PhysicsStructure(blocks);
 
-        /*structure.Velocity = new Vector3(...);
-        structure.AngularVelocity = new Vector3(...);*/
+        Vector3 toBreak = brokenPos - structure.WorldPosition;
+        toBreak.Y = 0f;
 
-        foreach (var (pos, type) in blocks)
+        if (toBreak.LengthSquared() > 0.01f)
+        {
+            Vector3 horizontalDir = Vector3.Normalize(toBreak);
+            Vector3 axis = Vector3.Normalize(Vector3.Cross(Vector3.Up, horizontalDir));
+            float magnitude = MathF.Min(toBreak.Length() * 0.8f, 2.5f);
+            structure.AngularVelocity = axis * magnitude;
+        }
+        else
+        {
+            structure.AngularVelocity = new Vector3(0.2f, 0f, 0.1f);
+        }
+
+        structure.Velocity = new Vector3(0f, -0.2f, 0f);
+
+        foreach (var (pos, _) in blocks)
         {
             WorldBlocks.Remove(pos);
             chunkManager.MarkChunkDirty(pos);
         }
 
         ActiveStructures.Add(structure);
-    }
-
-    public void CheckAndDetachFloatingStructures(Vector3 brokenPos)
-    {
-        const float maxCheckDistance =  32f;
-
-        HashSet<Vector3> visited = new HashSet<Vector3>();
-        Queue<Vector3> queue = new Queue<Vector3>();
-
-        foreach (var offset in FaceOffsets)
-        {
-            Vector3 neighbor = brokenPos + offset;
-            if (HasBlock(neighbor) && !visited.Contains(neighbor))
-            {
-                visited.Add(neighbor);
-                queue.Enqueue(neighbor);
-            }
-        }
-
-        List<(Vector3, int)> potentialStructure = new List<(Vector3, int)>();
-
-        while (queue.Count > 0)
-        {
-            Vector3 current = queue.Dequeue();
-            int type = GetBlockType(current);
-            potentialStructure.Add((current, type));
-
-            if (Vector3.DistanceSquared(current, brokenPos) > maxCheckDistance * maxCheckDistance)
-                continue;
-
-            foreach (var offset in FaceOffsets)
-            {
-                Vector3 neighbor = current + offset;
-                if (!visited.Contains(neighbor) && HasBlock(neighbor))
-                {
-                    visited.Add(neighbor);
-                    queue.Enqueue(neighbor);
-                }
-            }
-        }
-
-        if (potentialStructure.Count > 2 && !IsStructureSupported(potentialStructure))
-        {
-            DetachStructure(potentialStructure);
-        }
     }
 }
 

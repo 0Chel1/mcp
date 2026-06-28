@@ -186,12 +186,13 @@ public class MainProg : Renderer
         for (int i = blocks.ActiveStructures.Count - 1; i >= 0; i--)
         {
             var s = blocks.ActiveStructures[i];
-            s.Update((float)gameTime.ElapsedGameTime.TotalSeconds, blocks);
+            s.Update(dt, blocks);
 
-            if (s.Velocity.Length() < 0.1f && s.Velocity.Length() < 0.1f)
+            /*if (s.Settled)
             {
+                s.SnapToWorld(blocks);
                 blocks.ActiveStructures.RemoveAt(i);
-            }
+            }*/
         }
 
         base.Update(gameTime);
@@ -258,10 +259,11 @@ public class MainProg : Renderer
         {
             foreach (var structure in blocks.ActiveStructures)
             {
-                foreach (var (pos, type) in structure.Blocks)
+                foreach (var (worldCenter, type) in structure.GetWorldBlockCenters())
                 {
                     var cubeFaces = blocks.faceVerts[type % blocks.faceVerts.Count];
-                    Matrix worldMat = Matrix.CreateTranslation(pos);
+                    Matrix worldMat = Matrix.CreateTranslation(worldCenter) + structure.Rotation - Matrix.CreateTranslation(0.5f, 0.5f, 0.5f);
+                    //Matrix worldMat = Matrix.CreateTranslation(pos);
 
                     for (int f = 0; f < 6; f++)
                     {
