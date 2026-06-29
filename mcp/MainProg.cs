@@ -1,5 +1,6 @@
 ﻿using IDEOS.Input;
 using mcp.Features;
+using mcp.Physics;
 using MCP.Features;
 using MCP.Graphics;
 using Microsoft.Xna.Framework;
@@ -34,6 +35,7 @@ public class MainProg : Renderer
     const float HighlightDecayPerSecond = 2f;
     MapGeneration mapGen = new MapGeneration();
     BlocksManagement blocks = new BlocksManagement();
+    GravityGun gravityGun = new GravityGun();
 
     int blockSelected = 0;
     protected override void Initialize()
@@ -51,7 +53,8 @@ public class MainProg : Renderer
     {
         base.LoadContent();
         atlas = TextureAtlas.FromFile(Content, "atlas-definition.xml");
-        List<TextureRegion> region = new List<TextureRegion>() { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass"), atlas.GetRegion("dirt") };
+        List<TextureRegion> region = new List<TextureRegion>() 
+        { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass"), atlas.GetRegion("dirt"), atlas.GetRegion("sand") };
 
         for(int i = 0; i < region.Count; i++)
         {
@@ -78,7 +81,7 @@ public class MainProg : Renderer
     {
         if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) 
         {
-            //blocks.SaveWorld("world.dat");
+            blocks.SaveWorld("world.dat");
             Exit();
         }
         // Controls
@@ -95,7 +98,6 @@ public class MainProg : Renderer
         if (speedUp) speed = 0.2f;
         else speed = 0.08f;
 
-        //if(Input.Keyboard.WasKeyJustPressed(Keys.F)) 
 
         // Relative mouse look
         var center = new Point(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
@@ -126,25 +128,28 @@ public class MainProg : Renderer
                 Mouse.SetPosition(center.X, center.Y);
             }
 
-            if (Input.Mouse.WasButtonJustPressed(MouseButton.Right) && blocks.HasHighlight)
+            if (!gravityGun.Active)
             {
-                Vector3 normal = BlocksManagement.FaceOffsets[blocks.HighlightFace];
-                Vector3 placeCell = new Vector3(
-                    MathF.Round(blocks.HighlightPos.X + normal.X),
-                    MathF.Round(blocks.HighlightPos.Y + normal.Y),
-                    MathF.Round(blocks.HighlightPos.Z + normal.Z)
-                );
-                blocks.AddBlock(placeCell, blockSelected);
-            }
-            else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.HasHighlight)
-            {
-                Vector3 removeCell = new Vector3(
-                    MathF.Round(blocks.HighlightPos.X),
-                    MathF.Round(blocks.HighlightPos.Y),
-                    MathF.Round(blocks.HighlightPos.Z)
-                );
-                blocks.RemoveBlock(removeCell);
-                //blocks.chunkManager.RebuildMeshes(GraphicsDevice);
+                if (Input.Mouse.WasButtonJustPressed(MouseButton.Right) && blocks.HasHighlight)
+                {
+                    Vector3 normal = BlocksManagement.FaceOffsets[blocks.HighlightFace];
+                    Vector3 placeCell = new Vector3(
+                        MathF.Round(blocks.HighlightPos.X + normal.X),
+                        MathF.Round(blocks.HighlightPos.Y + normal.Y),
+                        MathF.Round(blocks.HighlightPos.Z + normal.Z)
+                    );
+                    blocks.AddBlock(placeCell, blockSelected);
+                }
+                else if (Input.Mouse.WasButtonJustPressed(MouseButton.Left) && blocks.HasHighlight)
+                {
+                    Vector3 removeCell = new Vector3(
+                        MathF.Round(blocks.HighlightPos.X),
+                        MathF.Round(blocks.HighlightPos.Y),
+                        MathF.Round(blocks.HighlightPos.Z)
+                    );
+                    blocks.RemoveBlock(removeCell);
+                    //blocks.chunkManager.RebuildMeshes(GraphicsDevice);
+                }
             }
         }
 
@@ -159,6 +164,7 @@ public class MainProg : Renderer
                     case 1: blockSelected = 0; break;
                     case 2: blockSelected = 1; break;
                     case 3: blockSelected = 2; break;
+                    case 4: blockSelected = 3; break;
                 }
                     
             }
@@ -173,6 +179,12 @@ public class MainProg : Renderer
             if (!IsMouseVisible) lookDir = oldLookDir;
         }
 
+        if (Input.Keyboard.WasKeyJustPressed(Keys.G))
+        {
+            gravityGun.Active = !gravityGun.Active;
+            if (!gravityGun.Active && gravityGun.Held != null) gravityGun.Release(gravityGun.Held, throwVelocity: null);
+        }
+
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         for (int c = 0; c < blocks.faceEmission.Count; c++)
         {
@@ -183,9 +195,17 @@ public class MainProg : Renderer
         }
 
         //Физические структуры
+        var mouseState = Mouse.GetState();
+        var keyboardState = Input.Keyboard.CurrentState;
+        gravityGun.Update(gameTime, blocks, cameraPos, lookDir, upDir, mouseState, keyboardState);
+
+        // --- Физические структуры ---
         for (int i = blocks.ActiveStructures.Count - 1; i >= 0; i--)
         {
             var s = blocks.ActiveStructures[i];
+
+            if (gravityGun.Held == s) continue;
+
             s.Update(dt, blocks);
 
             /*if (s.Settled)
@@ -262,8 +282,7 @@ public class MainProg : Renderer
                 foreach (var (worldCenter, type) in structure.GetWorldBlockCenters())
                 {
                     var cubeFaces = blocks.faceVerts[type % blocks.faceVerts.Count];
-                    Matrix worldMat = Matrix.CreateTranslation(worldCenter) + structure.Rotation - Matrix.CreateTranslation(0.5f, 0.5f, 0.5f);
-                    //Matrix worldMat = Matrix.CreateTranslation(pos);
+                    Matrix worldMat = Matrix.CreateTranslation(worldCenter) + Matrix.CreateFromQuaternion(structure.Orientation) - Matrix.CreateTranslation(0.5f, 0.5f, 0.5f);
 
                     for (int f = 0; f < 6; f++)
                     {
@@ -271,12 +290,7 @@ public class MainProg : Renderer
                         var verts = new VertexPositionTexture[6];
 
                         for (int i = 0; i < 6; i++)
-                        {
-                            verts[i] = new VertexPositionTexture(
-                                Vector3.Transform(face[i].Position, worldMat),
-                                face[i].TextureCoordinate
-                            );
-                        }
+                            verts[i] = new VertexPositionTexture(Vector3.Transform(face[i].Position, worldMat), face[i].TextureCoordinate);
 
                         foreach (var pass in basicEffect.CurrentTechnique.Passes)
                         {

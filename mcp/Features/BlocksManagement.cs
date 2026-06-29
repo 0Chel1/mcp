@@ -372,13 +372,12 @@ public class BlocksManagement
         foreach (var offset in FaceOffsets)
         {
             Vector3 start = brokenPos + offset;
-            if (!HasBlock(start) || globallyVisited.Contains(start))
-                continue;
+            if (!HasBlock(start) || globallyVisited.Contains(start)) continue;
 
-            if (start.Y < minBfsY)
-                continue;
+            if (start.Y < minBfsY) continue;
 
             var component = new List<(Vector3, int)>();
+            var separateComponents = new List<(Vector3, int)>();
             var queue = new Queue<Vector3>();
             queue.Enqueue(start);
             globallyVisited.Add(start);
@@ -386,13 +385,14 @@ public class BlocksManagement
             while (queue.Count > 0)
             {
                 Vector3 current = queue.Dequeue();
-                component.Add((current, GetBlockType(current)));
+                if (GetBlockType(current) == 3) separateComponents.Add((current, GetBlockType(current)));
+                else component.Add((current, GetBlockType(current)));
 
                 foreach (var off in FaceOffsets)
                 {
                     Vector3 neighbor = current + off;
-                    if (neighbor.Y < minBfsY)
-                        continue;
+                    if (neighbor.Y < minBfsY) continue;
+
                     if (!globallyVisited.Contains(neighbor) && HasBlock(neighbor))
                     {
                         globallyVisited.Add(neighbor);
@@ -401,9 +401,18 @@ public class BlocksManagement
                 }
             }
 
-            if (component.Count > 0 && !IsComponentSupported(component))
+            if (component.Count > 0 || separateComponents.Count > 0 && !IsComponentSupported(component))
             {
-                DetachStructure(component, brokenPos);
+                if(separateComponents.Count > 0)
+                {
+                    for (int i = 0; i < separateComponents.Count; i++)
+                    {
+                        var comp = new List<(Vector3, int)>();
+                        comp.Add(separateComponents[i]);
+                        DetachStructure(comp, brokenPos);
+                    }
+                }
+                else DetachStructure(component, brokenPos);
             }
         }
     }
@@ -415,14 +424,12 @@ public class BlocksManagement
     private bool IsComponentSupported(List<(Vector3, int)> component)
     {
         var componentSet = new HashSet<Vector3>();
-        foreach (var (pos, _) in component)
-            componentSet.Add(pos);
+        foreach (var (pos, _) in component) componentSet.Add(pos);
 
         foreach (var (pos, _) in component)
         {
             Vector3 below = pos + new Vector3(0, -1, 0);
-            if (HasBlock(below) && !componentSet.Contains(below))
-                return true;
+            if (HasBlock(below) && !componentSet.Contains(below)) return true;
         }
         return false;
     }
@@ -436,6 +443,7 @@ public class BlocksManagement
     /// структуре начальное вращение в сторону сломанной опоры.</param>
     private void DetachStructure(List<(Vector3, int)> blocks, Vector3 brokenPos)
     {
+        
         var structure = new PhysicsStructure(blocks);
 
         Vector3 toBreak = brokenPos - structure.WorldPosition;
