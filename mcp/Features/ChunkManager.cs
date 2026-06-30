@@ -90,26 +90,39 @@ public class ChunkManager
 
     private void RebuildSingleChunk(Chunk chunk, GraphicsDevice gd)
     {
-        var verts = new List<VertexPositionTexture>();
-        var inds = new List<int>();
+        var opaqueVerts = new List<VertexPositionTexture>();
+        var opaqueInds = new List<int>();
+        var transVerts = new List<VertexPositionTexture>();
+        var transInds = new List<int>();
 
         for (int lx = 0; lx < Chunk.SIZE; lx++)
             for (int ly = 0; ly < Chunk.SIZE; ly++)
                 for (int lz = 0; lz < Chunk.SIZE; lz++)
                 {
                     Vector3 worldPos = chunk.WorldPos + new Vector3(lx, ly, lz);
-
                     if (!bm.HasBlock(worldPos)) continue;
 
                     int type = bm.GetBlockType(worldPos);
+                    bool isTransparent = BlocksManagement.TransparentBlockTypes.Contains(type);
                     var blocksFaces = bm.faceVerts[type % bm.faceVerts.Count];
+
+                    var verts = isTransparent ? transVerts : opaqueVerts;
+                    var inds = isTransparent ? transInds : opaqueInds;
 
                     Matrix worldMat = Matrix.CreateTranslation(worldPos);
 
                     for (int f = 0; f < 6; f++)
                     {
                         Vector3 neighbor = worldPos + BlocksManagement.FaceOffsets[f];
-                        if (bm.HasBlock(neighbor)) continue;
+
+                        if (bm.HasBlock(neighbor))
+                        {
+                            int neighborType = bm.GetBlockType(neighbor);
+                            bool neighborTransparent = BlocksManagement.TransparentBlockTypes.Contains(neighborType);
+
+                            if (!isTransparent && !neighborTransparent) continue;
+                            if (isTransparent && neighborTransparent) continue;
+                        }
 
                         var faceVertsLocal = blocksFaces[f];
                         int startIdx = verts.Count;
@@ -121,26 +134,34 @@ public class ChunkManager
                     }
                 }
 
-        chunk.VertexCount = verts.Count;
+        //Opaque буфер
+        UploadGeometry(gd, opaqueVerts, opaqueInds, ref chunk.VertexBuffer, ref chunk.IndexBuffer, ref chunk.VertexCount, ref chunk.IndexCount);
 
-        if (chunk.VertexBuffer == null || chunk.VertexBuffer.VertexCount < verts.Count)
-        {
-            chunk.VertexBuffer?.Dispose();
-            chunk.VertexBuffer = new DynamicVertexBuffer(gd, VertexPositionTexture.VertexDeclaration,
-                Math.Max(verts.Count, 1024), BufferUsage.WriteOnly);
-        }
-        if (verts.Count > 0) chunk.VertexBuffer.SetData(verts.ToArray());
-        else chunk.VertexBuffer.SetData(new VertexPositionTexture[Math.Max(verts.Count, 1024)]);
-
-        if (chunk.IndexBuffer == null || chunk.IndexBuffer.IndexCount < inds.Count)
-        {
-            chunk.IndexBuffer?.Dispose();
-            chunk.IndexBuffer = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits,
-                Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
-        }
-        if (inds.Count > 0) chunk.IndexBuffer.SetData(inds.ToArray());
-        else chunk.IndexBuffer.SetData(new int[Math.Max(inds.Count, 1024)]);
+        //Transparent буфер
+        UploadGeometry(gd, transVerts, transInds, ref chunk.TransparentVertexBuffer, ref chunk.TransparentIndexBuffer, ref chunk.TransparentVertexCount, ref chunk.TransparentIndexCount);
 
         chunk.NeedsRebuild = false;
+    }
+
+    private void UploadGeometry(GraphicsDevice gd, List<VertexPositionTexture> verts, List<int> inds, ref DynamicVertexBuffer vb,
+        ref IndexBuffer ib, ref int vertexCount, ref int indexCount) {
+        vertexCount = verts.Count;
+        indexCount = inds.Count;
+
+        if (vb == null || vb.VertexCount < verts.Count)
+        {
+            vb?.Dispose();
+            vb = new DynamicVertexBuffer(gd, VertexPositionTexture.VertexDeclaration, Math.Max(verts.Count, 1024), BufferUsage.WriteOnly);
+        }
+        if (verts.Count > 0) vb.SetData(verts.ToArray(), 0, verts.Count, SetDataOptions.Discard);
+        //else vb.GetData(new VertexPositionTexture[1], SetDataOptions.Discard);
+
+        if (ib == null || ib.IndexCount < inds.Count)
+        {
+            ib?.Dispose();
+            ib = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, Math.Max(inds.Count, 1024), BufferUsage.WriteOnly);
+        }
+        if (inds.Count > 0) ib.SetData(inds.ToArray(), 0, inds.Count);
+        //else ib.SetData(new int[1], SetDataOptions.Discard);
     }
 }

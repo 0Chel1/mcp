@@ -3,28 +3,32 @@
   "WorkspaceRootPath": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\blocksmanagement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\blocksmanagement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\physicsstructure.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\physicsstructure.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:mainprog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\physics\\gravitygun.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:physics\\gravitygun.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\blockicon.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\blockicon.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\blocksmanagement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\blocksmanagement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\chunkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\chunkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:renderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\physics\\gravitygun.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:physics\\gravitygun.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|c:\\users\\\u0430\u0440\u0442\u0443\u0440\\desktop\\mp\\mcp\\features\\physicsstructure.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6C3E2506-B9BD-4CBD-8F77-4253F9CC2F53}|mcp.csproj|solutionrelative:features\\physicsstructure.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,7 +38,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Bookmark",
@@ -42,19 +46,32 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
+              "Title": "BlockIcon.cs",
+              "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\BlockIcon.cs",
+              "RelativeDocumentMoniker": "Features\\BlockIcon.cs",
+              "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\BlockIcon.cs",
+              "RelativeToolTip": "Features\\BlockIcon.cs",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAYwGMAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T06:32:50.582Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "GravityGun.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Physics\\GravityGun.cs",
               "RelativeDocumentMoniker": "Physics\\GravityGun.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Physics\\GravityGun.cs",
               "RelativeToolTip": "Physics\\GravityGun.cs",
-              "ViewState": "AgIAAGMAAAAAAAAAAAAAwHgAAAArAAAAAAAAAA==",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-28T14:42:45.95Z"
+              "WhenOpened": "2026-06-30T06:25:02.423Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 1,
               "Title": "Renderer.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Renderer.cs",
               "RelativeDocumentMoniker": "Renderer.cs",
@@ -62,17 +79,18 @@
               "RelativeToolTip": "Renderer.cs",
               "ViewState": "AgIAAAgAAAAAAAAAAAAxwBAAAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-27T11:59:57.965Z"
+              "WhenOpened": "2026-06-27T11:59:57.965Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 6,
               "Title": "PhysicsStructure.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\PhysicsStructure.cs",
               "RelativeDocumentMoniker": "Features\\PhysicsStructure.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\PhysicsStructure.cs",
               "RelativeToolTip": "Features\\PhysicsStructure.cs",
-              "ViewState": "AgIAABkAAAAAAAAAAAAnwCcAAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAAMoAAAAAAAAAAAAhwJIAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-26T18:37:31.713Z"
             },
@@ -84,34 +102,34 @@
               "RelativeDocumentMoniker": "Features\\ChunkManager.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\ChunkManager.cs",
               "RelativeToolTip": "Features\\ChunkManager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKQAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-26T18:41:40.255Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "BlocksManagement.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\BlocksManagement.cs",
               "RelativeDocumentMoniker": "Features\\BlocksManagement.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\Features\\BlocksManagement.cs",
               "RelativeToolTip": "Features\\BlocksManagement.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJsBAAA5AAAAAAAAAA==",
+              "ViewState": "AgIAAKUBAAAAAAAAAAAYwIsBAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-22T07:46:13.724Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T07:46:13.724Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "MainProg.cs",
               "DocumentMoniker": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\MainProg.cs",
               "RelativeDocumentMoniker": "MainProg.cs",
               "ToolTip": "C:\\Users\\\u0410\u0440\u0442\u0443\u0440\\Desktop\\MP\\mcp\\MainProg.cs",
               "RelativeToolTip": "MainProg.cs",
-              "ViewState": "AgIAAGUAAAAAAAAAAAAhwKcAAAA1AAAAAAAAAA==",
+              "ViewState": "AgIAAF4AAAAAAAAAAAAuwGUBAABnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-18T17:34:42.466Z"
+              "WhenOpened": "2026-06-18T17:34:42.466Z",
+              "EditorCaption": ""
             }
           ]
         }

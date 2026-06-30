@@ -36,8 +36,11 @@ public class MainProg : Renderer
     MapGeneration mapGen = new MapGeneration();
     BlocksManagement blocks = new BlocksManagement();
     GravityGun gravityGun = new GravityGun();
+    BlockIcon blockIcon;
 
     int blockSelected = 0;
+
+    List<TextureRegion> region = new List<TextureRegion>();
     protected override void Initialize()
     {
         base.Initialize();
@@ -47,16 +50,17 @@ public class MainProg : Renderer
         SetProjectionParameters(resolution, fov, z);
 
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+
+        
     }
 
     protected override void LoadContent()
     {
         base.LoadContent();
         atlas = TextureAtlas.FromFile(Content, "atlas-definition.xml");
-        List<TextureRegion> region = new List<TextureRegion>() 
-        { atlas.GetRegion("cobblestone") , atlas.GetRegion("grass"), atlas.GetRegion("dirt"), atlas.GetRegion("sand") };
-
-        for(int i = 0; i < region.Count; i++)
+        region.AddRange([atlas.GetRegion("cobblestone"), atlas.GetRegion("grass"), atlas.GetRegion("dirt"), atlas.GetRegion("sand"), atlas.GetRegion("glass"),
+        atlas.GetRegion("planks")]);
+        for (int i = 0; i < region.Count; i++)
         {
             float u0 = region[i].SourceRectangle.X / (float)atlas.Texture.Width;
             float v0 = region[i].SourceRectangle.Y / (float)atlas.Texture.Height;
@@ -64,6 +68,14 @@ public class MainProg : Renderer
             float v1 = (region[i].SourceRectangle.Y + region[i].SourceRectangle.Height) / (float)atlas.Texture.Height;
             blocks.faceVerts.Add(blocks.BuildBlockFaceVertexArrays(u0, v0, u1, v1));
         }
+
+        blockIcon = new BlockIcon(blocks)
+        {
+            Size = 48,
+            Pitch = MathHelper.Pi / 6f,   // 30°
+            Yaw = MathHelper.Pi / 4f,     // 45°
+        };
+
 
         //blocks.blocks.Clear();
         //blocks.AddBlock(Vector3.Zero, 1); раскоментировать если нужны тесты без карты.
@@ -79,6 +91,7 @@ public class MainProg : Renderer
 
     protected override void Update(GameTime gameTime)
     {
+
         if (Input.Keyboard.WasKeyJustPressed(Keys.Escape)) 
         {
             blocks.SaveWorld("world.dat");
@@ -165,6 +178,8 @@ public class MainProg : Renderer
                     case 2: blockSelected = 1; break;
                     case 3: blockSelected = 2; break;
                     case 4: blockSelected = 3; break;
+                    case 5: blockSelected = 4; break;
+                    case 6: blockSelected = 5; break;
                 }
                     
             }
@@ -221,7 +236,7 @@ public class MainProg : Renderer
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
-
+        GraphicsDevice.BlendState = BlendState.AlphaBlend;
         if (blocks.meshNeedsRebuild) blocks.RebuildMesh(GraphicsDevice);
 
         if (basicEffect == null) basicEffect = new BasicEffect(GraphicsDevice);
@@ -233,9 +248,13 @@ public class MainProg : Renderer
         basicEffect.View = Matrix.CreateLookAt(cameraPos, cameraPos + lookDir, upDir);
         basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, z.X, z.Y);
 
+        GraphicsDevice.BlendState = BlendState.Opaque;
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
         foreach (var chunk in blocks.chunkManager.Chunks.Values)
         {
-            int primitiveCount = chunk.IndexBuffer.IndexCount / 3;
+            if (chunk.VertexCount == 0 || chunk.IndexCount == 0) continue;
+            int primitiveCount = chunk.IndexCount / 3;
 
             foreach (var pass in basicEffect.CurrentTechnique.Passes)
             {
@@ -274,6 +293,31 @@ public class MainProg : Renderer
             basicEffect.VertexColorEnabled = false;
         }
 
+        GraphicsDevice.BlendState = BlendState.AlphaBlend;
+        GraphicsDevice.DepthStencilState = new DepthStencilState
+        {
+            DepthBufferEnable = true,
+            DepthBufferWriteEnable = false,
+            DepthBufferFunction = CompareFunction.LessEqual
+        };
+
+        foreach (var chunk in blocks.chunkManager.Chunks.Values)
+        {
+            if (chunk.TransparentVertexCount == 0 || chunk.TransparentIndexCount == 0) continue;
+            int primitiveCount = chunk.TransparentIndexCount / 3;
+
+            foreach (var pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                GraphicsDevice.SetVertexBuffer(chunk.TransparentVertexBuffer);
+                GraphicsDevice.Indices = chunk.TransparentIndexBuffer;
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.TransparentVertexCount, 0, primitiveCount);
+            }
+        }
+
+        GraphicsDevice.BlendState = BlendState.Opaque;
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
         //Физические структуры
         if (blocks.ActiveStructures.Count > 0)
         {
@@ -301,6 +345,17 @@ public class MainProg : Renderer
                 }
             }
         }
+        
+        GraphicsDevice.BlendState = BlendState.AlphaBlend;
+        GraphicsDevice.DepthStencilState = DepthStencilState.None;
+        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
+
+        Vector2 screenCenter = new Vector2(GraphicsDevice.Viewport.Width / 2f, GraphicsDevice.Viewport.Height - 60f);
+        blockIcon.Draw(GraphicsDevice, basicEffect, atlas.Texture, blockSelected, screenCenter);
+
+        GraphicsDevice.BlendState = BlendState.Opaque;
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.CullClockwiseFace };
 
         base.Draw(gameTime);
     }

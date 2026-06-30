@@ -10,9 +10,17 @@ public class Chunk
     public Vector3 WorldPos { get; private set; }
 
     public byte[,,] Blocks = new byte[SIZE, SIZE, SIZE];
+
     public DynamicVertexBuffer VertexBuffer;
     public IndexBuffer IndexBuffer;
     public int VertexCount = 0;
+    public int IndexCount = 0;
+
+    public DynamicVertexBuffer TransparentVertexBuffer;
+    public IndexBuffer TransparentIndexBuffer;
+    public int TransparentVertexCount = 0;
+    public int TransparentIndexCount = 0;
+
     public bool NeedsRebuild = true;
 
     public Chunk(Vector3 chunkCoord)

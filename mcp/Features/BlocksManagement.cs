@@ -68,6 +68,15 @@ public class BlocksManagement
         new Vector3(0, -1, 0)  // bottom
     };
 
+    /// <summary>
+    /// Типы блоков, которые рендерятся как полупрозрачные (стекло, вода и т.д.).
+    /// Добавляй сюда значения, когда вводишь новые прозрачные блоки.
+    /// </summary>
+    public static readonly HashSet<int> TransparentBlockTypes = new HashSet<int>
+    {
+        4
+    };
+
     public VertexPositionTexture[] combinedVertices;
     public int[] combinedIndices;
     public DynamicVertexBuffer vertexBuffer;
@@ -366,14 +375,12 @@ public class BlocksManagement
     public void CheckAndDetachFloatingStructures(Vector3 brokenPos)
     {
         HashSet<Vector3> globallyVisited = new HashSet<Vector3>();
-
         int minBfsY = (int)brokenPos.Y;
 
         foreach (var offset in FaceOffsets)
         {
             Vector3 start = brokenPos + offset;
             if (!HasBlock(start) || globallyVisited.Contains(start)) continue;
-
             if (start.Y < minBfsY) continue;
 
             var component = new List<(Vector3, int)>();
@@ -401,18 +408,16 @@ public class BlocksManagement
                 }
             }
 
-            if (component.Count > 0 || separateComponents.Count > 0 && !IsComponentSupported(component))
+            if (component.Count > 0 && !IsComponentSupported(component)) DetachStructure(component, brokenPos);
+
+            if (separateComponents.Count > 0)
             {
-                if(separateComponents.Count > 0)
+                for (int i = 0; i < separateComponents.Count; i++)
                 {
-                    for (int i = 0; i < separateComponents.Count; i++)
-                    {
-                        var comp = new List<(Vector3, int)>();
-                        comp.Add(separateComponents[i]);
-                        DetachStructure(comp, brokenPos);
-                    }
+                    var comp = new List<(Vector3, int)>();
+                    comp.Add(separateComponents[i]);
+                    DetachStructure(comp, brokenPos);
                 }
-                else DetachStructure(component, brokenPos);
             }
         }
     }
@@ -449,7 +454,7 @@ public class BlocksManagement
         Vector3 toBreak = brokenPos - structure.WorldPosition;
         toBreak.Y = 0f;
 
-        if (toBreak.LengthSquared() > 0.01f)
+        if (toBreak.LengthSquared() > 0f)
         {
             Vector3 horizontalDir = Vector3.Normalize(toBreak);
             Vector3 axis = Vector3.Normalize(Vector3.Cross(Vector3.Up, horizontalDir));
